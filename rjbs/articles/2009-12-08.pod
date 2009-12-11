@@ -7,8 +7,7 @@ There are a lot of horribly overcomplicated builtins, not just in Perl, but in
 many languages.  Some people like Lisp's C<format> best -- and why not?
 Like...
 
-=begin vim lisp
-
+  #!vim lisp
   (format nil "~4,'0d-~2,'0d-~2,'0d" 2005 6 10) ; ==> 2005-06-10
 
   (format nil "~:(~a~)" "tHe Quick BROWN foX")  ; ==> "The Quick Brown Fox"
@@ -16,8 +15,6 @@ Like...
   (format nil "~:r" 1234)  ; ==> "one thousand two hundred thirty-fourth"
 
   (format nil "~:@r" 1234) ; ==> "MCCXXXIIII"
-
-=end vim
 
 Right?  That's pretty awesome.  Then there's Perl's C<pack>.  It's sort of like
 a C<sprintf> designed by an assembly programmer who hates you:
@@ -28,8 +25,8 @@ a C<sprintf> designed by an assembly programmer who hates you:
 There are actually people who like that, and I have seen, with my own eyes, a
 guy who defended C<format>:
 
-=begin vim perl
 
+  #!vim perl
   format STDOUT_TOP =
                           Passwd File
   Name                Login    Office   Uid   Gid Home
@@ -47,7 +44,6 @@ Well, C<sprintf> isn't as awful as any of these, and that's why I love it... at
 least if you ignore things like:
 
   #!perl
-
   # Vectors!
   printf "%vd", "AB\x{100}";           # prints "65.66.256"
   printf "version is v%vd\n", $^V;     # Perl's version
@@ -77,12 +73,9 @@ templates as templates, outside of code.  So, for example, I could store the
 above string in a configuration file without worrying about the order of
 arguments:
 
-=begin vim dosini
-
+  #!vim dosini
   [Purchasing]
   format = Product %{id}s (%{name}s) added for $%0.2{price}f
-
-=end vim
 
 Then my program could call:
 
