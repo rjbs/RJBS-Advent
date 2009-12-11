@@ -1,6 +1,7 @@
 use strict;
 package Pod::Simple::XHTML::WithXHTMLRegions;
 use base 'Pod::Simple::XHTML';
+# ABSTRACT: Pod::Simple::XHTML with 'xhtml' regions left intact
 
 sub new {
   my $class = shift;
