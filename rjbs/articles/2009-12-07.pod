@@ -54,8 +54,7 @@ exits with an error condition.
 In addition to sending you the output of the command, it will include a summary
 of how the job went:
 
-=begin vim mail
-
+  #!vim mail
   From: "cron/lambda.example.com" <cron@lambda.example.com>
   To: root@lambda.example.com
   Date: Thu, 19 Nov 2009 03:00:09 -0500
@@ -69,8 +68,6 @@ of how the job went:
   Output :
 
   rm: cannot remove `/var/ram/foo@example_com_.3H6D8RyK': No such file or directory
-
-=end vim
 
 We can see how long it took, what happened, and its output.  The "FAIL" in the
 subject also lets us pick out jobs that failed from jobs that were merely

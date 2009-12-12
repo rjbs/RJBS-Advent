@@ -50,8 +50,7 @@ Here, I'm representing the schema in L<YAML|http://yaml.org> for readability,
 but they're really just data structures.  You could write it in Perl.  I
 usually use JSON.
 
-=begin vim yaml
-
+  #!vim yaml
   ---
   type: //map
   values:
@@ -63,8 +62,6 @@ usually use JSON.
         required:
           present: //str
           disposition: { type: //str, value: 'nice' }
-
-=end vim
 
 In other words, we require a hashref.  Each value is a hashref with either one
 or two entries.  One must be disposition.  If it's naughty, there will be no
@@ -84,8 +81,7 @@ It's easy to use this schema to validate things:
 
 But the whole point was to have this work in many languages, and it does:
 
-=begin vim javascript
-
+  #!vim javascript
   var rx = new Rx;
   var schema = Rx.makeSchema( structure );
 
@@ -93,12 +89,9 @@ But the whole point was to have this work in many languages, and it does:
     throw "invalid input!";
   }
 
-=end vim
-
 ...or...
 
-=begin vim ruby
-
+  #!vim ruby
   require 'Rx'
 
   rx = Rx.new
@@ -108,22 +101,16 @@ But the whole point was to have this work in many languages, and it does:
     throw "invalid input!";
   end
 
-=end vim
-
 There are other implementations, too.
 
 The Rx schema system is easy to extend.  If you want to use regular expressions
 you can use the PCRE extension, which many language will be able to implement,
 then you can write:
 
-=begin vim yaml
-
-  #!perl
+  #!vim yaml
   ---
   type: /pcre/str
   regex: '\A867-[5309]{4}\z'
-
-=end vim
 
 =head1 Coming Features (or: Missing Features)
 

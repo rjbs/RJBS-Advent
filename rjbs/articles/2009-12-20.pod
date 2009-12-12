@@ -39,8 +39,7 @@ because I'd already started down that road before formulating what I really
 wanted.  (That's how L<Config::INI> was born, which is also another story.)
 So, here's an example of all of the above features in use:
 
-=begin vim dosini
-
+  #!vim dosini
   [@CorePrep]
 
   [Name]
@@ -64,8 +63,6 @@ So, here's an example of all of the above features in use:
 
   [Authors]
   [Legal]
-
-=end vim
 
 Hey, look!  It's configuration just like
 L<Pod::Weaver|http://advent.rjbs.manxome.org/2009-12-18.html>!  Dist::Zilla and

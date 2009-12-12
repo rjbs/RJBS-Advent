@@ -32,8 +32,7 @@ Task::BeLike::RJBS is built with Dist::Zilla -- specifically with
 L<Dist::Zilla::Plugin::TaskWeaver>, a plugin for building tasks.  To use
 TaskWeaver, you just write a module with some Pod like this:
 
-=begin vim pod
-
+  #!vim pod
   =pkgroup Simple Modules (Wednesdays)
 
   =pkg Number::Nary 0.108 has robust unique-decodability detection
@@ -44,12 +43,9 @@ TaskWeaver, you just write a module with some Pod like this:
 
   =pkg Sort::ByExample
 
-=end vim
-
 You'll get output Pod like this:
 
-=begin vim pod
-
+  #!vim pod
   =head1 TASK CONTENTS
 
   =head2 Simple Modules (Wednesdays)
@@ -65,8 +61,6 @@ You'll get output Pod like this:
   Version 0.005 is required because: provides "rewrite" export
 
   =head3 Sort::ByExample
-
-=end vim
 
 You'll also get all those packages, with the versions given (if any) listed as
 prerequisites, so installing your task will get all those prerequisites as

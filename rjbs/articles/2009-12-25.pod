@@ -91,14 +91,11 @@ decided to use L<PPI::HTML>, which was faster and had a bit more control.  I
 could just write L<=begin perl> but that got tedious, so I added another
 transformation so that by writing...
 
-=begin vim text
-
+  #!vim text
   but that got tedious, so I added another transformation so that by writing...
 
     #!perl
     my $x = { foo => 10 };
-
-=end vim
 
 The indented block's shebang would be noticed, and instead I'd get:
 

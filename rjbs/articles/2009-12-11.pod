@@ -57,8 +57,7 @@ way to do it:
 Most of my F<dist.ini>, the master configuration file, is set up for me already
 -- it's only about five lines -- but I edit it a bit to make it look like this:
 
-=begin vim dosini
-
+  #!vim dosini
   name    = My-Project
   author  = Ricardo Signes <rjbs@cpan.org>
   license = Perl_5
@@ -67,8 +66,6 @@ Most of my F<dist.ini>, the master configuration file, is set up for me already
   [@RJBS]
   [@Git]
   [AutoPrereq]
-
-=end vim
 
 Now I'm ready to start coding.  I'll make a F<t/my-tests.t> and
 F<lib/My/Project.pm>.  My module might look something like this:

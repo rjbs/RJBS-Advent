@@ -27,8 +27,7 @@ fill in strings.  It takes a description of the goal output and tries to build
 something matching that description.  For example, here's roughly the default
 template for Pod::Weaver:
 
-=begin vim dosini
-
+  #!vim dosini
   [@CorePrep]
 
   [Name]
@@ -53,8 +52,6 @@ template for Pod::Weaver:
   [Authors]
   [Legal]
 
-=end vim
-
 This describes the document to be created; every section of the configuration
 will try to produce a section in the output Pod, except for C<@CorePrep>, which
 is a I<plugin bundle>, which could provide a bunch of sections or other kinds
@@ -66,8 +63,7 @@ tedious to work with.
 After that, we try to make sure there are NAME and VERSION sections, then we
 look for prelude region, and so on.  The input document might look like this:
 
-=begin vim pod
-
+  #!vim pod
   package Tree::Christmas;
   # ABSTRACT: a binary tree decorated with baubles and popcorn
 
@@ -97,8 +93,6 @@ look for prelude region, and so on.  The input document might look like this:
 
   This is an arrayref of pickles.
 
-=end vim
-
 If we want to include things like a name, version, license, and author in the
 output, we'll need to provide those.  We'll do that with something like this:
 
@@ -118,8 +112,7 @@ output, we'll need to provide those.  We'll do that with something like this:
 That gets us a new Pod::Elemental::Document which, when turned into a Pod
 stirng, looks something like this:
 
-=begin vim pod
-
+  #!vim pod
   =head1 NAME
 
   Tree::Christmas - a binary tree decorated with baubles and popcorn
@@ -164,8 +157,6 @@ stirng, looks something like this:
 
   This document is available under the blah blah blah.
 
-=end vim
-
 Not bad!  We avoid typing nearly half of the output document, by lines -- and
 that's only part of the benefit.  If we have five modules in our distribution,
 all that boilerplate is added everywhere for us, so multiply that savings
@@ -196,19 +187,15 @@ add an "Acknowledgements" section is only about a dozen lines of code.  A
 plugin to integrate Pod::Weaver with L<Pod::WikiDoc> is only about six lines of
 code.  This allows the transformation of the easy to type:
 
-=begin vim pod
-
+  #!vim pod
   =for wikidoc
   * bell
   * book
   * candle
 
-=end vim
-
 ...into the grumble-inducing:
 
-=begin vim pod
-
+  #!vim pod
   =over 2
 
   =item *
@@ -224,8 +211,6 @@ code.  This allows the transformation of the easy to type:
   candle
 
   =back
-
-=end vim
 
 A recurring theme of this set of articles has been my hatred for needless
 typing and boilerplate content, and Pod::Weaver has gone a long way to letting

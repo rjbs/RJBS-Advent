@@ -38,8 +38,6 @@ guy who defended C<format>:
   $name,              $login,  $office,$uid,$gid, $home
   .
 
-=end vim
-
 Well, C<sprintf> isn't as awful as any of these, and that's why I love it... at
 least if you ignore things like:
 

@@ -90,8 +90,7 @@ a directory, F<welcome.mkit>, which is the mkit itself.  In it, we'll stick a
 bunch of files, starting with F<manifest.yaml> (often F<manifest.json>
 instead), which configures the kit as a whole:
 
-=begin vim yaml
-
+  #!vim yaml
   validator: Rx
   renderer : TT 
   assembler:
@@ -105,8 +104,6 @@ instead), which configures the kit as a whole:
   - Subject: Welcome to Yoyodyne!
 
   path: body.mkdn
-
-=end vim
 
 This file explains how the message will be built.  It says we'll validate the
 input using L<Rx|http://rjbs.manxome.org/rx>, render templates using
@@ -123,15 +120,12 @@ In other words, we'll get a easy to read plain text part and a pretty HTML
 part, and they'll have identical content.  So, for the message we were sending,
 above, we might have this Markdown file:
 
-=begin vim markdown
-
+  #!vim markdown
   # Welcome to Yoyodyne, [% customer.realname %]!
 
   You signed up with the following address:
 
       [% customer.address.envelope_style %]
-
-=end vim markdown
  
 Unless told otherwise, Email::MIME::Kit assumes you're working in Unicode with
 files stored in UTF-8 and takes care of encoding for you.  Now you've got one
@@ -139,8 +133,7 @@ template, identical across both alternatives, and all that remains is to
 validate the input.  We declared we'd use the Rx schema system, and we'll put a
 schema in F<rx.json> in our mkit directory.
 
-=begin vim javascript
-
+  #!vim javascript
   {
     "type": "//rec",
     "required": {
@@ -150,8 +143,6 @@ schema in F<rx.json> in our mkit directory.
       }
     }
   }
-
-=end vim
 
 Now we'll refuse to even build an email unless we were given a valid customer
 object.  How do we actually build the message?  It's easy.
