@@ -145,9 +145,9 @@ pre {
   background: #575;
 }
 
-.calendar td.day a:visited:after {
+.calendar td.day a:visited:after,
+.calendar td.day.today a:visited:after {
   content: "\2714";
-  /*background: #797;*/
 }
 
 .calendar td.day.advent {
