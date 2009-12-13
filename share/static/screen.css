@@ -109,9 +109,7 @@ pre {
 }
 
 .calendar {
-  margin-left: auto;
-  margin-right: auto;
-  margin-bottom: 1em;
+  margin: 1em auto;
 }
 
 .calendar th {
@@ -122,23 +120,24 @@ pre {
 
 .calendar td {
   text-align: center;
-  width: 9em;
-  height: 5em;
+  width: 3em;
+  height: 2.5em;
   padding: 0;
 }
 
 .calendar td.day {
   background: #aaa;
+  font-size: xx-large;
 }
 
 .calendar td.day a {
   display: block;
   color: #fff;
-  height: 5em;
+  height: 2em;
   padding: 0;
   margin: 0;
   vertical-align: middle;
-  line-height: 5em;
+  line-height: 2em;
 }
 
 .calendar td.day a:hover,
@@ -146,8 +145,9 @@ pre {
   background: #575;
 }
 
-.calendar td.day a:visited {
-  background: #797;
+.calendar td.day a:visited:after {
+  content: "\2714";
+  /*background: #797;*/
 }
 
 .calendar td.day.advent {
