@@ -133,11 +133,11 @@ pre {
 .calendar td.day a {
   display: block;
   color: #fff;
-  height: 2em;
+  height: 2.5em;
   padding: 0;
   margin: 0;
   vertical-align: middle;
-  line-height: 2em;
+  line-height: 2.5em;
 }
 
 .calendar td.day a:hover,
