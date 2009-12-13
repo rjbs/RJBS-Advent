@@ -135,15 +135,26 @@ This is easy, we do it like this:
 * create a new Christmas::App (shown below)
 * create Christmas::App::Command::music and ::cards
 
-That's it.  Now the new Christmas::App will be run, it will find all the
-command classes we've written, and it will decide which one to execute based on
-the first argument to the C<christmas> command.  Christmas::App is easy to
-write; here it is in its entirety:
+Christmas::App is easy to write; here it is in its entirety:
 
   #!perl
   package Christmas::App;
   use App::Cmd::Setup -app;
   1;
+
+Extra commands just need those three original methods, for example:
+
+  #!perl
+  package Christmas::App::Command::music;
+  use Christmas::App -command;
+
+  sub validate_args { ... }
+  sub opt_spec      { ... }
+  sub execute { ... }
+
+That's it.  Now the new Christmas::App will be run, it will find all the
+command classes we've written, and it will decide which one to execute based on
+the first argument to the C<christmas> command.
 
 =head1 Other Cool Stuff
 

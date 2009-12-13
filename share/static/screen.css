@@ -128,12 +128,12 @@ pre {
 }
 
 .calendar td.day {
-  background: #ccc;
+  background: #aaa;
 }
 
 .calendar td.day a {
   display: block;
-  color: #444;
+  color: #fff;
   height: 5em;
   padding: 0;
   margin: 0;
@@ -141,24 +141,24 @@ pre {
   line-height: 5em;
 }
 
-.calendar td.day a:hover {
-  background: #f0f0f0;
+.calendar td.day a:hover,
+.calendar td.day a:visited:hover {
+  background: #575;
 }
 
-.calendar td.day.advent {
-  background: #aea;
-}
-
-.calendar td.day.advent.today {
+.calendar td.day a:visited {
   background: #797;
 }
 
-.calendar td.day.advent.today a { color: #fff; }
-
-.calendar td.day.advent.today a:hover {
-  background: #bdb;
-  color: #000;
+.calendar td.day.advent {
+  background: #797;
 }
+
+.calendar td.day.advent.today {
+  background: #aea;
+}
+
+.calendar td.day.advent.today a { color: #000; }
 
 .calendar td.day.advent.missing,
 .calendar td.day.missing#dec-25,
@@ -168,7 +168,7 @@ pre {
 }
 
 .calendar td.day.advent.future {
-  background: #eaa;
+  background: #977;
 }
 .calendar td#dec-25 {
   background: #ffd700;
