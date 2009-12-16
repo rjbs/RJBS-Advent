@@ -44,11 +44,11 @@ strategies:
 
   #!perl
   use String::RewritePrefix
-    rewrite => { -as => 'holiday_px', prefix => { '' => 'Holiday::Web::', '+' => '' } },
-    rewrite => { -as => 'num_px',     prefix => { '-' => 'negative ', '+' => 'positive ' } };
+    rewrite => { -as => 'holiday_px', prefixes => { '' => 'Holiday::Web::', '+' => '' } },
+    rewrite => { -as => 'num_px',     prefixes => { '-' => 'negative ', '+' => 'positive ' } };
 
   my @numbers = num_px( qw( +40 -10 +18 0 ) );
-  # ==> (positive 40, negative 10, positive 18, zero)
+  # ==> (positive 40, negative 10, positive 18, 0)
 
   my @plugins = holiday_px( qw(
     Model::GreetingCard
