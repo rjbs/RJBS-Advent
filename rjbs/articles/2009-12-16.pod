@@ -45,8 +45,7 @@ strategies:
   #!perl
   use String::RewritePrefix
     rewrite => { -as => 'holiday_px', prefix => { '' => 'Holiday::Web::', '+' => '' },
-    rewrite => { -as => 'num_px',     prefix => { '-' => 'negative ', '+' => 'positive ' },
-  };
+    rewrite => { -as => 'num_px',     prefix => { '-' => 'negative ', '+' => 'positive ' };
 
   my @numbers = num_px( qw( +40 -10 +18 0 ) );
   # ==> (positive 40, negative 10, positive 18, zero)
