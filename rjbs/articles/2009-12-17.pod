@@ -10,8 +10,8 @@ are annoying together.
 
 There are many systems for picking a set of symbols and assigning them
 numerical values.  These are I<character sets>.  Unicode is the current
-favorite.  In unicode, for example, the character numbered 0x9731 is a snowman
-(E<#9731>).  There are also systems for writing out strings of characters to
+favorite.  In unicode, for example, the character numbered 0x2603 is a snowman
+(E<0x2603>).  There are also systems for writing out strings of characters to
 bytes so you can put them in a file system.  These are I<encodings>.  UTF-8 is
 a popular way to do this for unicode, but not the only way.  Some character
 sets already fit in 8-bit bytes, so they are their own encoding.  Latin-1 is a
