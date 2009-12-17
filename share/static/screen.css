@@ -171,8 +171,26 @@ pre {
   background: #977;
 }
 .calendar td#dec-25 {
-  background: #ffd700;
+  background: #E1B62E;
+  color: #000;
   font-weight: bold;
+}
+
+.calendar td#dec-25 a {
+  color: #000;
+}
+
+.calendar td#dec-25 a:hover {
+  background: #B88F30;
+}
+
+.calendar td#dec-26 a {
+  color: #000;
+  background: #B180A2;
+}
+
+.calendar td#dec-26 a:hover {
+  background: #5B4354;
 }
 
 #notes {
