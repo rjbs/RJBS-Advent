@@ -117,6 +117,7 @@ want happens.
 What's less trivial -- but immensely powerful for testing -- is the Failable
 transport wrapper.
 
+  #!perl
   my $sender = Email::Sender::Transport::Test->new;
   my $failer = Email::Sender::Transport::Failable->new({ transport => $sender });
 

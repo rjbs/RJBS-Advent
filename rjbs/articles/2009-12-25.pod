@@ -62,6 +62,7 @@ The input files are Pod documents where the non-pod content is an email
 document.  Alternately, the input files are email documents where the body is
 Pod.  I<What??>  Well:
 
+  #!code
   Title:   You can take the calendar with you when you go...
   Package: WWW::AdventCalendar
 
@@ -74,6 +75,7 @@ I originally made the body markup type pluggable, but then I remembered how
 much I love Pod and I dropped that feature.  This let me use one set of syntax
 semantics for everything.  For example, I could write:
 
+  #!vim pod
   =begin vim lisp
 
   (format nil "~4,'0d-~2,'0d-~2,'0d" 2005 6 10) ; ==> 2005-06-10
@@ -104,20 +106,20 @@ The indented block's shebang would be noticed, and instead I'd get:
 
 =head1 The Pod Transformers
 
+=head2 Syntax Highlighting
+
 So, those bits of code are the useful bits, unless you really want to run an
 advent calendar just like me.  For now they're being released with
 WWW::AdventCalendar, because they're just a bit too hacky to be for general use
 yet, I think.  Still, here's what they do:
 
-I'm using L<Pod::Simple::XHTML> to convert from Pod to HTML.  Actually, I'm
-using L<Pod::Simple::XHTML::WithXHTMLRegions>, which is a subclass I wrote for
-the calendar.  I'd started with L<Pod::Xhtml>, but it was buggy and
-unmaintained.  Pod::Simple, on the other hand, is buggy and maintained.  Or, at
-least, it's maintained.  It can be hard to tell whether it's buggy or just
-incomprehensible.  Anyway, I can have a C<=begin xhtml> block that lets me
-provide literal XHTML rather than Pod.  This is perfect for providing marked
-up, colorized code blocks.  All I had to do was get those XHTML blocks produced
-before Pod::Simple::XHTML did its thing.
+I'm using L<Pod::Simple::XHTML> to convert from Pod to HTML.  I'd started with
+L<Pod::Xhtml>, but it was buggy and unmaintained.  Pod::Simple, on the other
+hand, is buggy and maintained.  Or, at least, it's maintained.  It can be hard
+to tell whether it's buggy or just incomprehensible.  Anyway, I can have a
+C<=begin xhtml> block that lets me provide literal XHTML rather than Pod.  This
+is perfect for providing marked up, colorized code blocks.  All I had to do was
+get those XHTML blocks produced before Pod::Simple::XHTML did its thing.
 
 Obviously, this was a job for L<Pod::Elemental>, the engine behind
 L<Pod::Weaver>!  I wrote two libraries, L<Pod::Elemental::Transformer::PPIHTML>
@@ -129,6 +131,58 @@ then another that returned the newly built HTML.
 I'm hoping that these will make it easy to write other syntax highlighting
 engines for Pod-to-HTML conversion in the future -- possibly engines that dont'
 require spawning F<vim> instances!
+
+=head2 Shorthand Lists
+
+I mentioned using L<Pod::WikiDoc> syntax for lists when talking about
+L<Pod::Weaver|http://advent.rjbs.manxome.org/2009-12-18.html>.  WikiDoc regions
+are really powerful, and make writing lists really easy, but they do much more
+than lists and I didn't I<want> them to!  For example, look at this region:
+
+  #!vim pod
+  =for wikidoc
+  * L<Acme::ProgressBar>
+  * L<Games::Nintendo::Mario> - it's I<super>
+
+It doesn't do what I want, because it doesn't expect formatting codes (things
+like C<< LE<lt>...E<gt> >>.  What I have to write is:
+
+  #!vim pod
+  =for wikidoc
+  * [Acme::ProgressBar]
+  * [Games::Nintendo::Mario] - it's ~super~
+
+This isn't so bad, but it's not what I'm using in the rest of the document!  To
+get lists that were as easy to write as those in Pod::WikiDoc, but still Pod, I
+wrote L<Pod::Elemental::Transformer::List>, which lets me write
+
+  #!vim pod
+  =for :list
+  * L<Acme::ProgressBar>
+  * L<Games::Nintendo::Mario> - it's I<super>
+
+The colon in C<:list> says that the contents of the region are really Pod (even
+though they're re-interpreted into more Pod by the transformer.  It's easy to
+write nested lists, too:
+
+  #!vim pod
+  =begin :list
+
+  * glossary
+
+  These words are useful to know:
+  
+  =for :list
+  = advent
+  the four weeks leading up to Christmas
+  = noel
+  the two weeks beginning on Christmas eve
+
+  * glossy
+  
+  These words mean shiny: ...
+
+  =end list
 
 =head1 Same Code Next Year
 
