@@ -162,30 +162,31 @@ that's only part of the benefit.  If we have five modules in our distribution,
 all that boilerplate is added everywhere for us, so multiply that savings
 across all our modules.  Then, if ever we want to change our license or add an
 author or even change the overall layout of the output document, we only need
-to change our inputs.
+to change our configuration in one place.
 
-If you're wondering about the C<ppi_document> input above, it's because some
-sections can be built by analyzing the Perl content of the document, so you can
-automatically document things like included packages, defined subroutines, and
-so on.  (You could also write something to compile the code and look at the
-symbol table or meta layer, although no one has done that yet!)  Because "load
-a F<.pm> file, break it into Pod and Perl, rewrite the Pod, and write it back
-out" is such a common pattern, there's even L<Pod::Elemental::PerlMunger> that
-takes care of everything but the "rewrite the Pod" step for you, leaving you
-free to focus on configuring your weaver or other rewriting tool.
+If you're wondering about the C<ppi_document> input above, it's there because
+some sections can be built by analyzing the Perl content of the document, so
+you can automatically document things like included packages, defined
+subroutines, and so on.  (You could also write something to compile the code
+and look at the symbol table or meta layer, although no one has done that yet!)
+Because "load a F<.pm> file, break it into Pod and Perl, rewrite the Pod, and
+write it back out" is such a common pattern, there's even
+L<Pod::Elemental::PerlMunger>, which takes care of everything but the "rewrite
+the Pod" step for you, leaving you free to focus on configuring your weaver or
+other rewriting tool.
 
 That's the interface on which L<Dist::Zila::Plugin::PodWeaver> is built.  It
 gets all its inputs from your Dist::Zilla configuration and then rewrites all
 your Perl modules with Pod::Weaver.  If you're using Dist::Zilla, all you need
-to do to get all the rewriting seen above is add the line L<[PodWeaver]> into
+to do to get all the rewriting seen above is add the line C<[PodWeaver]> into
 your F<dist.ini>.
 
 =head1 Extending Pod::Weaver
 
-Pod::Weaver tries to make it add new behavior.  For example, a simple plugin to
-add an "Acknowledgements" section is only about a dozen lines of code.  A
-plugin to integrate Pod::Weaver with L<Pod::WikiDoc> is only about six lines of
-code.  This allows the transformation of the easy to type:
+Pod::Weaver tries to make it easy to add new behavior.  For example, a simple
+plugin to add an "Acknowledgements" section is only about a dozen lines of
+code.  A plugin to integrate Pod::Weaver with L<Pod::WikiDoc> is only about six
+lines of code.  This allows the transformation of the easy to type:
 
   #!vim pod
   =for wikidoc
