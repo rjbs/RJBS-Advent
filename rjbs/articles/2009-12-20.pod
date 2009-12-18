@@ -28,7 +28,7 @@ F<procmail> settings, but that's another story.
 
 I had a few major goals:
 
-=for wikidoc
+=for :list
 * make "configuration for a plugin" also mean "load the plugin"
 * allow plugins to validate their own input
 * allow any given plugin to be loaded multiple times
@@ -153,8 +153,8 @@ making MVP an important asset in their applications in the coming year.
 
 =head1 See Also
 
-=for wikidoc
-* [Config::MVP]
-* [App::Addex::Config] - the origin point of MVP
-* [Config::MVP::Assembler::WithBundles] - how plugin bundles work
-* [Config::Any] - yeah, I speak it; it just doesn't do enough for me!
+=for :list
+* L<Config::MVP>
+* L<App::Addex::Config> - the origin point of MVP
+* L<Config::MVP::Assembler::WithBundles> - how plugin bundles work
+* L<Config::Any> - yeah, I speak it; it just doesn't do enough for me!

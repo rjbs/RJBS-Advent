@@ -128,7 +128,7 @@ language is all I'm aiming for -- and I think that's enough for me!
 
 =head1 See Also
 
-=for wikidoc
-* [Rx Schema|http://rjbs.manxome.org/rx]
-* [Data::Rx]
-* [Data::Rx::TypeBundle::Perl]
+=for :list
+* L<Rx Schema|http://rjbs.manxome.org/rx>
+* L<Data::Rx>
+* L<Data::Rx::TypeBundle::Perl>

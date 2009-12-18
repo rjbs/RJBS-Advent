@@ -143,10 +143,21 @@ Until then... Merry Christmas!
 
 =head1 See Also
 
-=for wikidoc
-* [WWW::AdventCalendar]
-* [Pod::Advent] - the Pod formatter used by L<http://perladvent.org> (not me)
-* [CatalystAdvent|http://dev.catalyst.perl.org/repos/Catalyst/trunk/examples/CatalystAdvent/] - the Catalyst Advent Calendar, whose CSS I stole
-* [Text::VimColor] - colorize any syntax type that Vim understands
-* [PPI::HTML] - turn Perl into syntax marked HTML with [PPI]
-* [Pod::Simple] - the most commonly-used Pod parser
+=begin :list
+
+* L<WWW::AdventCalendar> - the calendar site generating code
+* Pod-handling code produced to power the calendar:
+
+=for :list
+* L<Pod::Elemental::Transformer::List>
+* L<Pod::Elemental::Transformer::SynHi>
+* L<Pod::Elemental::Transformer::PPIHTML>
+* L<Pod::Elemental::Transformer::VimHTML>
+
+* L<Pod::Advent> - the Pod formatter used by L<http://perladvent.org> (not me)
+* L<CatalystAdvent|http://dev.catalyst.perl.org/repos/Catalyst/trunk/examples/CatalystAdvent/> - the Catalyst Advent Calendar, whose CSS I stole
+* L<Text::VimColor> - colorize any syntax type that Vim understands
+* L<PPI::HTML> - turn Perl into syntax marked HTML with L<PPI>
+* L<Pod::Simple> - the most commonly-used Pod parser
+
+=end :list

@@ -102,7 +102,7 @@ fixed soon!
 
 =head1 See Also
 
-=for wikidoc
-* [MIME::Visitor]
-* [MIME::BodyMunger] - used by MIME::Visitor's rewriting methods
-* [MIME::Entity] - yet another email message representation
+=for :list
+* L<MIME::Visitor>
+* L<MIME::BodyMunger> - used by MIME::Visitor's rewriting methods
+* L<MIME::Entity> - yet another email message representation

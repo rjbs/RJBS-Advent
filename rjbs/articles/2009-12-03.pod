@@ -9,9 +9,9 @@ least half of them are I<pipemailers>.  A pipemailer reads a message on STDIN
 and exits with a code that lets the calling program know what happened.  To
 grossly simplify, the possible exit values are:
 
-=for wikidoc
-* {0E<nbsp>} - everything is okay; the message has been handled
-* {75} - we couldn't handle the message right now, try again later
+=for :list
+* C<0E<nbsp>> - everything is okay; the message has been handled
+* C<75> - we couldn't handle the message right now, try again later
 * anything else - something is wrong; report failure and never try again
 
 Why does this matter?  Well, say you're using L<Email::Filter> or
@@ -67,8 +67,8 @@ stupid bounces into errors that only I needed to see.
 
 =head1 See Also
 
-=for wikidoc
-* [Email::Pipemailer::DieHandler]
-* [Email::Filter]
-* [Mail::Audit]
-* [Perrin Harkins speaks for us all|http://use.perl.org/~perrin/journal/36161]
+=for :list
+* L<Email::Pipemailer::DieHandler>
+* L<Email::Filter>
+* L<Mail::Audit>
+* L<Perrin Harkins speaks for us all|http://use.perl.org/~perrin/journal/36161>

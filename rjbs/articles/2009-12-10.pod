@@ -164,11 +164,11 @@ form letters -- and Email::MIME::Kit is still getting better.
 
 =head1 See Also
 
-=for wikidoc
-* [Email::MIME::Kit]
-* [Email::MIME::Kit::Assembler::Markdown]
-* [Email::MIME::Kit::Renderer::TT]
-* [Email::MIME::Kit::Validator::Rx]
-* [Email::MIME::Kit::KitReader::SWAK]
-* [Email::MIME]
-* [Email::Stuff]
+=for :list
+* L<Email::MIME::Kit>
+* L<Email::MIME::Kit::Assembler::Markdown>
+* L<Email::MIME::Kit::Renderer::TT>
+* L<Email::MIME::Kit::Validator::Rx>
+* L<Email::MIME::Kit::KitReader::SWAK>
+* L<Email::MIME>
+* L<Email::Stuff>

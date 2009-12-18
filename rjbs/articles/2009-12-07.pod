@@ -86,8 +86,8 @@ on Solaris, but its reports still can't compare with App::Cronjob's!
 
 =head1 See Also
 
-=for wikidoc
-* [App::Cronjob]
-* [crontab2english|http://interglacial.com/~sburke/pub/crontab2english.html] -
+=for :list
+* L<App::Cronjob>
+* L<crontab2english|http://interglacial.com/~sburke/pub/crontab2english.html> -
 Sean M. Burke's tool for making crontab schedules readable
-* [Cron|http://en.wikipedia.org/wiki/cron]
+* L<Cron|http://en.wikipedia.org/wiki/cron>

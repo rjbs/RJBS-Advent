@@ -209,11 +209,11 @@ in.
 
 =head1 See Also
 
-=for wikidoc
-* [Mixin::ExtraFields]
-* [Mixin::ExtraFields::Param]
-* [Mixin::ExtraFields::Hive]
-* [Data::Hive]
-* [Mixin::ExtraFields::Driver::DBIC]
-* [DBIx::Class]
-* [Object::Annotate] - a related, failed experiment
+=for :list
+* L<Mixin::ExtraFields>
+* L<Mixin::ExtraFields::Param>
+* L<Mixin::ExtraFields::Hive>
+* L<Data::Hive>
+* L<Mixin::ExtraFields::Driver::DBIC>
+* L<DBIx::Class>
+* L<Object::Annotate> - a related, failed experiment

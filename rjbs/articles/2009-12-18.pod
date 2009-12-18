@@ -220,14 +220,13 @@ time solving problems.
 
 =head1 See Also
 
-=for wikidoc
-* [Pod::Weaver]
-* [Pod::Elemental] - the Pod object model on which Weaver is built
-* [Pod::Eventual] - the event-based parser behind Pod::Elemental
-* [Dist::Zilla::Plugin::PodWeaver]
-* [Dist::Zilla::Plugin::PodPurler] - a pale imitation/prototype of PodWeaver
-* [Pod::Elemental::PerlMunger] - for writing your own Pod-in-Perl rewriter
-* [Pod::WikiDoc] - David Golden's excellent wiki-like Pod dialect
-* [Pod::Weaver::PluginBundle::RJBS] - how I weave my Pod
-* what is pod weaver, [Part 1|http://rjbs.manxome.org/rubric/entry/1808], [Part
-2|http://rjbs.manxome.org/rubric/entry/1809] - blog post about Pod::Weaver
+=for :list
+* L<Pod::Weaver>
+* L<Pod::Elemental> - the Pod object model on which Weaver is built
+* L<Pod::Eventual> - the event-based parser behind Pod::Elemental
+* L<Dist::Zilla::Plugin::PodWeaver>
+* L<Dist::Zilla::Plugin::PodPurler> - a pale imitation/prototype of PodWeaver
+* L<Pod::Elemental::PerlMunger> - for writing your own Pod-in-Perl rewriter
+* L<Pod::WikiDoc> - David Golden's excellent wiki-like Pod dialect
+* L<Pod::Weaver::PluginBundle::RJBS> - how I weave my Pod
+* what is pod weaver, L<Part 1|http://rjbs.manxome.org/rubric/entry/1808>, L<Part 2|http://rjbs.manxome.org/rubric/entry/1809> - blog post about Pod::Weaver

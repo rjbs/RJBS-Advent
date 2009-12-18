@@ -71,8 +71,8 @@ Wayfarers.
 
 =head1 See Also
 
-=for wikidoc
-* [Git::Fingerd]
-* [Net::Finger::Server]
-* [Net::Finger]
-* [Git::PurePerl]
+=for :list
+* L<Git::Fingerd>
+* L<Net::Finger::Server>
+* L<Net::Finger>
+* L<Git::PurePerl>

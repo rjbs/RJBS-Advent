@@ -105,14 +105,14 @@ That's it.
 
 Now, when you run C<dzil release>, this happens:
 
-=for wikidoc
+=for :list
 * abort if you're not all committed to git
 * determine all prereqs by finding "use" and similar statements
 * write out a README, LICENSE, Makefile.PL, MANIFEST, META.yml and META.json
 * decide on the next release's version number
-* defined {$VERSION} in all your packages
+* defined C<$VERSION> in all your packages
 * add a NAME, VERSION, LICENSE, and AUTHORS section to all the Pod
-* turn all {=method} commands into grouped "normal" Pod
+* turn all C<=method> commands into grouped "normal" Pod
 * update the changelog with the new version and the current date/time
 * build a tarball and upload it to PAUSE (submit it for CPAN index)
 * commit the changes to the changelog file
@@ -136,8 +136,8 @@ often!
 
 =head1 See Also
 
-=for wikidoc
-* [Dist::Zilla]
-* [Dist::Zilla::PluginBundle::RJBS]
-* [Dist::Zilla::PluginBundle::Git]
-* [Module::Starter]
+=for :list
+* L<Dist::Zilla>
+* L<Dist::Zilla::PluginBundle::RJBS>
+* L<Dist::Zilla::PluginBundle::Git>
+* L<Module::Starter>

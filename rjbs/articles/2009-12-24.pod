@@ -157,8 +157,8 @@ that's easier to maintain and test.
 
 =head1 See Also
 
-=for wikidoc
-* [Email::Sender::Manual::QuickStart]
-* [Email::Sender::Simple]
-* [Email::Sender]
-* [Email::Sender::Transport::SQLite]
+=for :list
+* L<Email::Sender::Manual::QuickStart>
+* L<Email::Sender::Simple>
+* L<Email::Sender>
+* L<Email::Sender::Transport::SQLite>

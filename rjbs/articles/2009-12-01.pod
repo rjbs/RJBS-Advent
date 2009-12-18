@@ -159,10 +159,10 @@ the amount of code you must write significantly.
 
 =head1 See Also
 
-=for wikidoc
-* [Sub::Exporter]
-* [Sub::Exporter::Tutorial] - a more thorough tutorial on the basics
-* [Sub::Exporter::Cookbook] - stupid Sub::Exporter tricks
-* [Sub::Exporter::Lexical] - imports that only last for your scope
-* [Sub::Import] - treat Exporter-using packages as if they used Sub::Exporter
+=for :list
+* L<Sub::Exporter>
+* L<Sub::Exporter::Tutorial> - a more thorough tutorial on the basics
+* L<Sub::Exporter::Cookbook> - stupid Sub::Exporter tricks
+* L<Sub::Exporter::Lexical> - imports that only last for your scope
+* L<Sub::Import> - treat Exporter-using packages as if they used Sub::Exporter
 

@@ -101,6 +101,6 @@ too.
 
 =head1 See Also
 
-=for wikidoc
-* [Mixin::Linewise::Readers]
-* [Mixin::Linewise::Writers]
+=for :list
+* L<Mixin::Linewise::Readers>
+* L<Mixin::Linewise::Writers>

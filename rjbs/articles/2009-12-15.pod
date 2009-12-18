@@ -105,7 +105,7 @@ Path::Resolver object to replace your stock FileSystem resolver.
 
 =head1 See Also
 
-=for wikidoc
-* [Path::Resolver]
-* [HTML::Mason::Resolver]
-* [Email::MIME::Kit::KitReader::SWAK]
+=for :list
+* L<Path::Resolver>
+* L<HTML::Mason::Resolver>
+* L<Email::MIME::Kit::KitReader::SWAK>

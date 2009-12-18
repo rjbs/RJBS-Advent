@@ -129,9 +129,9 @@ L<mkit|http://advent.rjbs.manxome.org/2009-12-10.html> Christmas cards.
 
 This is easy, we do it like this:
 
-=for wikidoc
+=for :list
 * rename Christmas::App to Christmas::App::Command::list
-* replace its {use base 'App::Cmd::Simple'} with {use Christmas::App -command}
+* replace its C<use base 'App::Cmd::Simple'> with C<use Christmas::App -command>
 * create a new Christmas::App (shown below)
 * create Christmas::App::Command::music and ::cards
 
@@ -181,10 +181,10 @@ to some object delegate.
 
 =head1 See Also
 
-=for wikidoc
-* [App::Cmd]
-* [App::Cmd::Tester]
-* [App::Cmd::Simple]
-* [Getopt::Long::Descriptive]
-* [App::CLI] - an alternative to App::Cmd (with almost no documentation)
-* [MooseX::App::Cmd]
+=for :list
+* L<App::Cmd>
+* L<App::Cmd::Tester>
+* L<App::Cmd::Simple>
+* L<Getopt::Long::Descriptive>
+* L<App::CLI> - an alternative to App::Cmd (with almost no documentation)
+* L<MooseX::App::Cmd>

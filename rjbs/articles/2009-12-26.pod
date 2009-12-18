@@ -70,8 +70,8 @@ Have fun, make some bundles, share, and enjoy.
 
 =head1 See Also
 
-=for wikidoc
-* [Task::BeLike::RJBS] - my box
-* [Task::BeLike::BINGOS], [Task::BeLike::hanekomu], [Task::BeLike::YANICK]
-* [Bundle::Ovid], [Bundle::Theory], and many more
-* [Dist::Zilla::Plugin::TaskWeaver]
+=for :list
+* L<Task::BeLike::RJBS> - my box
+* L<Task::BeLike::BINGOS>, L<Task::BeLike::hanekomu>, L<Task::BeLike::YANICK>
+* L<Bundle::Ovid>, L<Bundle::Theory>, and many more
+* L<Dist::Zilla::Plugin::TaskWeaver>

@@ -58,5 +58,5 @@ together; a source just needs to return a hashref of names and cloneable URIs.
 
 =head1 See Also
 
-=for wikidoc
-* [Git::Megapull]
+=for :list
+* L<Git::Megapull>

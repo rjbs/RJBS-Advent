@@ -110,8 +110,8 @@ before release.
 
 =head1 See Also
 
-=for wikidoc
-* [Pod::Coverage::TrustPod]
-* [Pod::Coverage]
-* [Test::Pod::Coverage]
-* [Pod::Eventual]
+=for :list
+* L<Pod::Coverage::TrustPod>
+* L<Pod::Coverage>
+* L<Test::Pod::Coverage>
+* L<Pod::Eventual>

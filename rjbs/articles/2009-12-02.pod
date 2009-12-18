@@ -85,8 +85,8 @@ Finally, here's a quick bit of Christmas spirit:
 
 =head1 See Also
 
-=for wikidoc
-* [Number::Nary]
-* [UDCode] - to determine if a set of digits will produce unambiguous strings
-* [Math::BaseCalc] - another take on the problem (but I don't recommend it)
+=for :list
+* L<Number::Nary>
+* L<UDCode> - to determine if a set of digits will produce unambiguous strings
+* L<Math::BaseCalc> - another take on the problem (but I don't recommend it)
 

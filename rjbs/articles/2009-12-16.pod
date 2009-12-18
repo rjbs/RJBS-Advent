@@ -69,7 +69,7 @@ It means I<they> have more time for Typing of the Dead, too.
 
 =head1 See Also
 
-=for wikidoc
-* [String::RewritePrefix]
-* [Catalyst::Utils]
+=for :list
+* L<String::RewritePrefix>
+* L<Catalyst::Utils>
 

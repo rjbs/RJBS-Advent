@@ -84,6 +84,6 @@ from Perl, using my own code.
 
 =head1 See Also
 
-=for wikidoc
-* [Games::Bowling::Scorecard]
-* [Real bowling|http://en.wikipedia.org/wiki/Ten-pin_bowling] (not candlepin!)
+=for :list
+* L<Games::Bowling::Scorecard>
+* L<Real bowling|http://en.wikipedia.org/wiki/Ten-pin_bowling> (not candlepin!)

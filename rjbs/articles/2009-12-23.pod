@@ -65,6 +65,6 @@ problem.
 
 =head1 See Also
 
-=for wikidoc
-* [Sort::ByExample]
-* [Sort::Maker]
+=for :list
+* L<Sort::ByExample>
+* L<Sort::Maker>

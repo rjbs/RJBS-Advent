@@ -152,9 +152,9 @@ surprised how often it will be just right.
 
 =head1 See Also
 
-=for wikidoc
-* [String::Formatter]
-* [String::Formatter::Cookbook] - more detailed examples than seen here
-* [String::Format] - String::Formatter's less powerful ancestor
-* [Lisp::Fmt] - a Lisp-like formatter that you may not use
+=for :list
+* L<String::Formatter>
+* L<String::Formatter::Cookbook> - more detailed examples than seen here
+* L<String::Format> - String::Formatter's less powerful ancestor
+* L<Lisp::Fmt> - a Lisp-like formatter that you may not use
 

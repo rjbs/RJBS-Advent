@@ -96,6 +96,6 @@ like you'd like it.  Use it everywhere!
 
 =head1 See Also
 
-=for wikidoc
-* [E'Mail::Acme]
-* [Acme::|http://www.perlfoundation.org/perl5/index.cgi?acme]
+=for :list
+* L<E'Mail::Acme>
+* L<Acme::|http://www.perlfoundation.org/perl5/index.cgi?acme>
