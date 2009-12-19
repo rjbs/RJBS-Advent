@@ -12,11 +12,11 @@ I like overpowered modules as much as the next guy, but here's about where I
 draw the line:  Inline::Files is a form of source filter, and includes this
 warning:
 
-=begin xhtml
+=begin html
 
   <!-- This should really work with =over, but doesn't. - rjbs, 2009-11-23 --><blockquote> It is possible that this module may overwrite the source code in files that use it. To protect yourself against this possibility, you are strongly advised to use the -backup option described in "Safety first".  </blockquote>
 
-=end xhtml
+=end html
 
 =head1 The DATA Section
 
