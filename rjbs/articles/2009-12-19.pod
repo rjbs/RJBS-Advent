@@ -59,6 +59,9 @@ If I want to learn more about a repository, it's easy:
   perl-0.001      = 602b746868d227e0a72144e6677b0d4a14a668cd
   perl-0.002      = 4b3102379609957b0ca2202f47a7a050ad6c42ee
 
+  [README]
+  Rx is really cool, yadda yadda, whatever...
+
 =head1 The Future!
 
 As time goes on, we can forwardport more ancient protocols into the future,
