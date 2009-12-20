@@ -20,18 +20,20 @@ article, but just to write articles.  I would steal someone else's code!
 First, I looked for whatever powered the L<Perl Advent
 Calendar|http://perladvent.org>.  I figured with new CSS it would be fine.  I
 found L<Pod::Advent>, but something about it made me decide to keep looking.  I
-have no idea what anymore.  Then I went to CatalystAdvent, which powers the
-L<Catalyst Advent Calendar|http://www.catalystframework.org/calendar>.  I liked
-its look out of the box, so I started to install it, but it needed things no
-longer on CPAN.  I hacked around that and then started to wonder whether I
-wouldn't be happier just publishing static files.  Why?  Who knows.
+have no idea what anymore.  Then I went to
+L<CatalystAdvent|http://dev.catalyst.perl.org/repos/Catalyst/trunk/examples/CatalystAdvent>,
+which powers the L<Catalyst Advent
+Calendar|http://www.catalystframework.org/calendar>.  I liked its look out of
+the box, so I started to install it, but it needed things no longer on CPAN.  I
+hacked around that and then started to wonder whether I wouldn't be happier
+just publishing static files.  Why?  Who knows.
 
 I try pretty hard not to re-invent solutions to solved problems, and (believe
 it or not) I succeed more often than not in quashing my urge to rewrite
 perfectly good systems.  Here, though, it seemed like I'd be happier with
 something I wrote for myself.  In the end, I think I was.
 
-Anyway, I mostly stole the CSS and templates from Catalyst, and I'm pretty
+Anyway, I mostly stole the CSS and templates from CatalystAdvent, and I'm pretty
 happy that, too.
 
 =head1 WWW::AdventCalendar
@@ -45,7 +47,7 @@ There's just a program to run that looks for your articles, decides how many to
 publish, and writes out the article HTML, the index, the Atom feed, and a few
 other files.
 
-  ~/code/advent$ ./bin/advcal --today 2009-12-11 --articles ./rjbs/articles/  
+  ~/code/advent$ ./bin/advcal -c advcal.ini --today 2009-12-11
   processing article for 2009-12-01...
   processing article for 2009-12-02...
   processing article for 2009-12-03...
@@ -90,7 +92,7 @@ based on L<my Vim
 colorscheme|http://www.vim.org/scripts/script.php?script_id=260>.  The code
 uses L<Vim|Text::VimColor> (the editor) to colorize my code, but for Perl I
 decided to use L<PPI::HTML>, which was faster and had a bit more control.  I
-could just write L<=begin perl> but that got tedious, so I added another
+could just write C<=begin perl> but that got tedious, so I added another
 transformation so that by writing...
 
   #!vim text
@@ -125,12 +127,11 @@ Obviously, this was a job for L<Pod::Elemental>, the engine behind
 L<Pod::Weaver>!  I wrote two libraries, L<Pod::Elemental::Transformer::PPIHTML>
 and L<Pod::Elemental::Transformer::VimHTML>, both of which composed the
 L<Pod::Elemental::Transformer::SynHi> role.  All that left for the transformers
-to do was have a method that picked which parts of the document to rewrite and
-then another that returned the newly built HTML.
+to do was have a method that rewrote plain text into marked up HTML.
 
 I'm hoping that these will make it easy to write other syntax highlighting
-engines for Pod-to-HTML conversion in the future -- possibly engines that dont'
-require spawning F<vim> instances!
+engines for Pod-to-HTML conversion in the future -- possibly engines that don't
+require spawning Vim instances!
 
 =head2 Shorthand Lists
 
