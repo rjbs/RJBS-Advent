@@ -64,10 +64,12 @@ The input files are Pod documents where the non-pod content is an email
 document.  Alternately, the input files are email documents where the body is
 Pod.  I<What??>  Well:
 
-  #!code
+  #!synmux
+  #!vim make
   Title:   You can take the calendar with you when you go...
   Package: WWW::AdventCalendar
 
+  #!vim pod
   =head1 Merry Christmas!  Advent is over.
 
   It's a common misconception that Advent calendars include today, Christmas

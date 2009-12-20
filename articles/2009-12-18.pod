@@ -63,10 +63,12 @@ tedious to work with.
 After that, we try to make sure there are NAME and VERSION sections, then we
 look for prelude region, and so on.  The input document might look like this:
 
-  #!vim pod
+  #!synmux
+  #!vim perl
   package Tree::Christmas;
   # ABSTRACT: a binary tree decorated with baubles and popcorn
 
+  #!vim pod
   =begin :prelude
 
   =head1 WARNING
