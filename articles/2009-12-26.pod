@@ -72,6 +72,6 @@ Have fun, make some bundles, share, and enjoy.
 
 =for :list
 * L<Task::BeLike::RJBS> - my box
-* L<Task::BeLike::BINGOS>, L<Task::BeLike::hanekomu>, L<Task::BeLike::YANICK>
+* L<Task::BeLike::BINGOS>, L<Task::BeLike::hanekomu>, L<Task::BeLike::YANICK> - others like it
 * L<Bundle::Ovid>, L<Bundle::Theory>, and many more
 * L<Dist::Zilla::Plugin::TaskWeaver>

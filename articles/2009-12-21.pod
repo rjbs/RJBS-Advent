@@ -5,17 +5,17 @@ Package: Git::Megapull
 
 ...or C<~/src> or whatever you use.  Personally, I have C<~/code/hub/>, in
 which I have a clone of L<all the repositories|http://github.com/rjbs> that I
-host on L<GitHub|http://github.com/>.  If you checked, you'll see that I have a
+host on L<GitHub|http://github.com/>.  If you checked, you saw that I have a
 lot of repositories there.  This can be a real pain when I set up a new
 workstation.  (That doesn't happen often, but if Santa wants to bring me a
 brand new MacBook, I will leave out extra milk and cookies.)  It's also a big
 pain to get all my repos up to date, which I like to do before travel, or as a
 backup procedure.  I wanted one command that would ensure I had every repo
 cloned and up to date.  That command is C<git megapull>.  When run, it finds
-all your remote repositories and checks whether you have a matching directory
-in F<cwd>.  If you don't, the repository is cloned.  If you do, its origin is
-fetched and the master branch is merged.  It also tells you if you have
-directories lying around that don't correspond to remote repositories.
+all your remote repositories and, for each, checks whether you have a matching
+directory in F<cwd>.  If you don't, the repository is cloned.  If you do, its
+origin is fetched and the master branch is merged.  It also tells you if you
+have directories lying around that don't correspond to remote repositories.
 
 There are three switches to C<git megapull>.  C<-c> will only clone
 repositories; existing clones will not be updated.  C<-b> will create bare
@@ -23,9 +23,9 @@ repositories when cloning, which is great for making backups.
 
 The third switch is C<-s> or C<--source>.  It tells megapull how to get a
 listing of your remote repositories.  L<Git::Megapull> comes with a source for
-Github, so you can run C<git megapull -s Github> (or put "Github" in the
+GitHub, so you can run C<git megapull -s Github> (or put "GitHub" in the
 C<megapull.source> entry of your F<~/.gitconfig>) to find and clone all your
-repositories from Github using their API.
+repositories from GitHub using their API.
 
 =head2 Providing Other Sources
 
@@ -54,9 +54,11 @@ together; a source just needs to return a hashref of names and cloneable URIs.
     
     return \%repo_uri;
   }
+
   1;
 
 =head1 See Also
 
 =for :list
 * L<Git::Megapull>
+* L<rgit> - execute a command on all the git repos in a directory

@@ -8,7 +8,7 @@ the one I most hope to see adopted.  For better or worse, I often found myself
 looked at as "that guy who does the email code," and people ask me what library
 they should use for this or that.  I end up shrugging, most of the time, and
 saying, "What I look for in an email module is not the same as what you will
-care about.  I'm a wonk.  I have very peculiar needs."
+care about.  I'm a weirdo.  I have very peculiar needs."
 
 Email::Sender is not like that.  If you are going to send email from any code
 that matters, you should use Email::Sender.  Let's see why.
@@ -37,7 +37,7 @@ list, and do all sorts of other really important things.  It's easy:
 
 The success value returned or the failure exception thrown both can be
 inspected for more information, but that's rarely useful for common cases; you
-just want to know if it worked or not.
+just want to know whether it worked or not.
 
 =head1 Specifying a Transport
 
@@ -89,7 +89,8 @@ weird problems.
 
 This is great for those tests, but lots of our tests fork.  Once our test
 process forks, storing all its deliveries in what is effectively a global
-variable isn't very useful.  Instead, we test like this:
+variable, scoped I<per process>, isn't very useful.  Instead, we test like
+this:
 
   #!perl
   $ENV{EMAIL_SENDER_TRANSPORT} = 'SQLite';
@@ -102,8 +103,8 @@ variable isn't very useful.  Instead, we test like this:
 
   # ...and now we inspect the mail we would have sent out...
 
-We've trivially collected all the mail sent by any forked child -- and by any
-spawned subprocess that uses Email::Sender.  Hopefully that's all of them!
+We've trivially collected all the mail sent by any forked child -- I<and> by
+any spawned subprocess that uses Email::Sender.
 
 =head1 More Testing Tools
 

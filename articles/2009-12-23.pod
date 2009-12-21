@@ -37,7 +37,8 @@ looks at the third and fourth elements rather than the first two.  These give
 it access to the value before transformation.
 
 Finally, you can mark items as "ties" in the example sort by using a hashref as
-the example:
+the example, with the values indicating rank.  By marking two as having the
+same value, they'll get send to the fallback to break the tie:
 
   #!perl
   my $sorter = sbe(
@@ -45,7 +46,7 @@ the example:
       'Klortho the Magnificent' => 1,
       'Mrs. Claus' => 2,
       'Cold Miser' => 3,
-      'Heat Miser' => 4,
+      'Heat Miser' => 3,
     },
     {
       xform    => sub { $_[0]->recipient },
@@ -60,8 +61,8 @@ before giving up and writing this code.
 
 Sort::ByExample solves a pretty specific problem, and one that could always be
 solved by writing just a few more lines of Perl.  Still, not having to write
-those lines is a pretty nice perk that leaves more time for solving the real
-problem.
+those lines is a pretty nice perk that leaves more time for solving more
+pressing problems.
 
 =head1 See Also
 
