@@ -19,7 +19,9 @@ get first service.  Their presents get delivered first, then everybody else's.
     [ 'Klortho the Magnificent', 'Mrs. Claus', 'Cold Miser' ],
     {
       xform    => sub { $_[0]->recipient },
-      fallback => sub { $_[3]->degrees_north <=> $_[2]->degrees_north },
+      fallback => sub { $_[3]->degrees_north <=> $_[2]->degrees_north
+                     || $_[2]->submission    <=> $_[3]->submission
+      },
     }
   );
 
@@ -50,7 +52,9 @@ same value, they'll get send to the fallback to break the tie:
     },
     {
       xform    => sub { $_[0]->recipient },
-      fallback => sub { $_[3]->degrees_north <=> $_[2]->degrees_north },
+      fallback => sub { $_[3]->degrees_north <=> $_[2]->degrees_north
+                     || $_[2]->submission    <=> $_[3]->submission
+      },
     }
   );
 
