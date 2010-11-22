@@ -1,0 +1,20 @@
+Title:  This is a Test
+Package: Test::Article
+
+=head1 Testing
+
+  #!perl
+  use Test::More;
+
+  ok(1);
+
+  done_testing;
+
+Have fun, kids!
+
+=head1 See Also
+
+=for :list
+* L<Test::Less> - anything less would be uncivilized
+* L<Test::Most> - anything more would be impossible
+
