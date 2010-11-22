@@ -53,6 +53,9 @@ Test::BinaryData
 Test::Fatal
 Test::Routine
 
+Global::Context
+Exception::Reporter
+
 App::Addex
 Acme::ProgressBar
 Color::Palette
