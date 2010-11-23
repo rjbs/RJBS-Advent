@@ -1,10 +1,10 @@
      December 2010      SUNDAY    = ??
-  Su Mo Tu We Th Fr Sa  MONDAY    = ??
-            1  2  3  4  TUESDAY   = ??
-   5  6  7  8  9 10 11  WEDNESDAY = ??
-  12 13 14 15 16 17 18  THURSDAY  = ??
-  19 20 21 22 23 24 25  FRIDAY    = ??
-  26 27 28 29 30 31     SATURDAY  = ??
+  Su Mo Tu We Th Fr Sa  MONDAY    = Work
+            1  2  3  4  TUESDAY   = Heavy
+   5  6  7  8  9 10 11  WEDNESDAY = Easy
+  12 13 14 15 16 17 18  THURSDAY  = Email
+  19 20 21 22 23 24 25  FRIDAY    = Devel
+  26 27 28 29 30 31     SATURDAY  = Silly
 
 x  1 - 
 x  2 - 
@@ -35,30 +35,42 @@ x 23 -
 x 24 - 
 x 25 - 
 
+     December 2010      SUNDAY    = ??
+  Su Mo Tu We Th Fr Sa  MONDAY    = Work
+            1  2  3  4  TUESDAY   = Heavy
+   5  6  7  8  9 10 11  WEDNESDAY = Easy
+  12 13 14 15 16 17 18  THURSDAY  = Email
+  19 20 21 22 23 24 25  FRIDAY    = Devel
+  26 27 28 29 30 31     SATURDAY  = Silly
+
+
 ___[ backups.txt ]___
-Data::Hive
-Data::InputMonster
-Getopt::Long::Descriptive
-Log::Dispatchouli
+
 MooseX::ComposedBehavior
-Number::Tolerant
-Pod::CYOA
 Role::Subsystem
-String::Errf
-Throwable::X
-Sub::Exporter::ForMethods (?)
-Sub::Import
+Data::Hive
+MRO::Magic
+
+Acme::ProgressBar
+Games::Nintendo::Mario
+Pod::CYOA
+
 Test::BinaryData
 Test::Fatal
 Test::Routine
 
-Global::Context
 Exception::Reporter
+Getopt::Long::Descriptive
+Global::Context
+Log::Dispatchouli
+String::Errf
+Throwable::X
 
 App::Addex
-Acme::ProgressBar
 Color::Palette
 DBIx::Locker
-Games::Nintendo::Mario
+Data::InputMonster
 HTML::Widget::Factory
-MRO::Magic
+Number::Tolerant
+Sub::Exporter::ForMethods (?)
+Sub::Import
