@@ -39,7 +39,6 @@ ___[ backups.txt ]___
 Data::Hive
 Data::InputMonster
 Getopt::Long::Descriptive
-Git::Megapull
 Log::Dispatchouli
 MooseX::ComposedBehavior
 Number::Tolerant
