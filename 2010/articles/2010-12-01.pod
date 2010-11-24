@@ -1,20 +1,134 @@
-Title:  This is a Test
-Package: Test::Article
+Title:  A Logging Library that Really Stinks
+Package: Log::Dispatchouli
 
-=head1 Testing
+=head1 Could you just use...
+
+Yeah, probably.  After all, there are over one hundred logging libraries on the
+CPAN.  Probably there's something out there that's tolerable.  The question is
+how to find it.
+
+A few years ago, at work, we were really starting to suffer because of the
+totally haphazard approach to logging.  Some code used Sys::Syslog, some code
+logged to files, some code used print.  Some used internal solution A, and some
+used internal solution B.  Given any two pieces of code, the odds were good
+that they didn't log the same way.  Worse, lots of the code didn't log at all,
+because I<doing> any logging was blocked by I<choosing how> to log.
+
+We wanted to standardize on something, and we didn't want to write our own
+logging framework.  How would we choose from the overwhelming selection
+available on the CPAN?  We picked the usual strategy:  figure out what
+everybody else was using.  The winner was L<Log::Log4perl>, and we wrote up
+notes on how we'd go about standardizing, which mostly meant writing a
+comprehensive configuration and then using it everywhere.  We got about as far
+as figuring out what syslog facilities to use for what and the balked.  It felt
+like there were too many options to really move forward.  We needed freedom
+from all that choice.
+
+Our alternative had been L<Log::Dispatch>, which has many of the same
+properties as Log4perl, but is less complex.  In fact, we had quite a bit of
+code already using it, and that code was pretty easy to work with it.  The only
+drag was that those programs often ended up with dozens of lines of code just
+to initialize the logger.  It turned out that they were always the same lines
+of code, with just a few tweaks, though.  We took that code and shoved it into
+a factory that built loggers and started using it everywhere.  That made it a
+one-liner to set up a logger the way we liked.
+
+Over time, the usual thing happened:  we simplified our logging so much that it
+seemed silly not to simplify it more, and a C<sprintf> facility was built into
+our logger (using L<String:Flogger>).  Then we added proxies so that
+subroutines of a program could use subloggers with built-in prefixes.  Just
+about everything we log, now -- many gigabytes per day -- gets logged
+by Log::Dispatchouli.
+
+=head1 Enough History, Let's See Some Code
+
+So, how does it work?  It's easy.  First, you need to make a logger.  Then you
+need to do it.
 
   #!perl
-  use Test::More;
+  my $logger = Log::Dispatchouli->new({
+    ident     => 'My::Awesome::Program',
+    facility  => 'local2', # a syslog facility
+    to_stdout => 0,
+  });
 
-  ok(1);
+  $logger->log("This is a boring message.");
 
-  done_testing;
+  $logger->log([ "This will be passed through %s.", 'String::Flogger' ]);
 
-Have fun, kids!
+The logger only really has to know a couple things: what its identity is, where
+it will log, and whether it should discard debugging messages.  There are a few
+other options, but they're pretty rarely needed.  The example above covers the
+great majority of options that get used.
+
+We can call C<log> on our logger and give it strings or arrayrefs of
+L<String::Flogger> args.  Those arrayrefs are mostly just C<sprintf> arguments,
+but non-strings (like references, objects, and undef) are converted to JSON,
+and we can defer evaluation of bits of the log message so that it won't be
+evaluated unless needed.  This works well with the C<log_debug> method, which
+logs only if our logger is in debug mode.
+
+  #!perl
+  $logger->log_debug([ "Current score: %s", sub { $self->compute_score } ]);
+
+If C<compute_score> is expensive, this is a big win, because we can avoid
+calling it unless we're actually going to log this message.
+
+We can also make little proxies for use in subroutines, for example:
+
+  #!perl
+  for my $account_id (@account_ids) {
+    $self->do_work({
+      account => Account->retrieve($account_id),
+      logger  => $logger->proxy({ proxy_prefix => "$account_id: " }),
+    });
+  }
+
+All the C<do_work> calls will log with a proxy to the main logger that prefixes
+all logged messages with a fixed string.
+
+This has been the state of the art for our logging for a few years now, and
+it's been a huge improvement, I<precisely because it has so few options>.
+
+=head2 Future Experiments
+
+One of the biggest drags with Log::Dispatchouli is that we tend to pass around
+logger objects or proxies up or down the call stack.  This can be a really
+annoying chore, and usually adds nothing to the program that couldn't be added
+other ways.  The program's logging behavior is mostly a global issue.  When we
+pass loggers to subroutines, right now, it's only to set a prefix or just to
+allow access to the logger at all.
+
+We're experimenting with a promising new throwback interface, using a shared
+global variable.  Globals are usually a bad idea, but sometimes you really do
+want a global!  Globals also let you tie behavior to the execution context with
+C<local> -- again, usually you don't want it, but consider the example above,
+rewritten:
+
+  #!perl
+  use Log::Dispatchouli::Global '$Logger';
+
+  for my $account_id (@account_ids) {
+    local $Logger = $Logger->proxy({ proxy_prefix => "$account_id: " });
+
+    $self->do_work({
+      account => Account->retrieve($account_id),
+    });
+  }
+  
+It looks about the same, but when we want to start using a proxy, we localize
+the shared variable instead of passing a lexical.  That means that C<do_work>
+doesn't need to look for a C<logger> argument or decide what to do if none
+was passed.  It justs uses the global, which is guaranteed to be there.  Unlike
+many systems that use global variables, Log::Dispatchouli::Global can be
+subclassed to use I<distinct> globals per subclass, so your application can
+have its own shared global that won't conflict with other applications, if you
+ever need to load more than one in a program.
 
 =head1 See Also
 
 =for :list
-* L<Test::Less> - anything less would be uncivilized
-* L<Test::Most> - anything more would be impossible
-
+* L<Log::Dispatchouli>
+* L<Log::Dispatchouli::Global>
+* L<Log::Dispatch> - the logging engine behind Log::Dispatchouli
+* L<String::Flogger> - the string formatter used by Log::Dispatchouli
