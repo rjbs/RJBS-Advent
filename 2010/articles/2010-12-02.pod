@@ -1,0 +1,54 @@
+Title:   Bringing out the Good Exporter for Company
+Package: Sub::Import
+
+=head1 The Illusion of Sophistication
+
+L<Sub::Exporter>, covered in L<the first Advent post last
+year|http://advent.rjbs.manxome.org/2009/2009-12-01.html>, describes itself as
+"a sophisticated exporter for custom-built routines."  This is in contrast to
+L<Exporter>, which is, well... chocked full of near-adequacy.
+
+Sometimes, though, you're stuck working with some code that you don't control
+and that uses the plain old Exporter.  L<Sub::Import> gets around this problem
+by letting you import from that library with a number of the features otherwise
+found only in Sub::Exporter.
+
+For example, say you want to use the useful but horribly named
+C<L<natatime|List::MoreUtils/natatime>> routine from List::MoreUtils, and you
+want to give it a name that won't make you constantly wonder, "What's
+I<natural> C<atime>?" It's easy to use Sub::Import to get apply Sub::Exporter's
+renaming facility:
+
+  #!perl
+  use Sub::Import 'List::MoreUtils' => natatime => { -as => 'iterate_by_n' };
+
+  my $iterator = iterate_by_n 3, @list;
+
+The import-to-scalar rename would work, too:
+
+  #!perl
+  my $by_n;
+  use Sub::Import 'List::MoreUtils' => natatime => { -as => \$by_n };
+
+  my $iterator = $by_n->(3, @list);
+
+You're not limited to renaming single routines, either.  You can use the prefix
+and suffix renaming for groups:
+
+  #!perl
+  use Sub::Import 'Perl6::Junction' => -ALL => { -suffix => '_junction' };
+
+  if ($input == any_junction(1, 2, 3)) {
+    say "$input is okay";
+  }
+
+Many other advanced features are available too, like custom installers or
+generators, so even if you're working with a library that's still using stock
+Exporter, you're not stuck with its limitations.
+
+=head1 See Also
+
+=for :list
+* L<Sub::Import>
+* L<Sub::Exporter>
+* L<Exporter>
