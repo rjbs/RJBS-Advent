@@ -1,6 +1,6 @@
 body {
   color: #000;
-  background: #977;
+  background-color: #73a30a;
   font-family: verdana, tahoma, sans-serif;
 }
 
@@ -59,9 +59,9 @@ dt {
 }
 
 #note {
-  background: #797;
+  background: #ff1460;
   border: 1px solid #575;
-  color: #fff;
+  color: #000;
 }
 
 .pod h1, .pod h2 {
@@ -142,7 +142,7 @@ pre {
 
 .calendar td.day a:hover,
 .calendar td.day a:visited:hover {
-  background: #575;
+  background: #73a30a;
 }
 
 .calendar td.day a:visited:after,
@@ -151,7 +151,7 @@ pre {
 }
 
 .calendar td.day.advent {
-  background: #797;
+  background: #156006;
 }
 
 .calendar td.day.advent.today {
@@ -168,10 +168,10 @@ pre {
 }
 
 .calendar td.day.advent.future {
-  background: #977;
+  background: #be000c;
 }
 .calendar td#dec-25 {
-  background: #E1B62E;
+  background: #f2e184;
   color: #000;
   font-weight: bold;
 }
@@ -181,7 +181,7 @@ pre {
 }
 
 .calendar td#dec-25 a:hover {
-  background: #B88F30;
+  background: #f2f7d4;
 }
 
 .calendar td#dec-26 a {
@@ -261,7 +261,7 @@ h2#See-Also {
 }
 
 .code-listing .line-numbers {
-  background-color: #797;
+  background-color: #73a30a;
   color: #fff;
   border-right: 2px #b00 solid;
   width: 3.5em;
@@ -275,6 +275,7 @@ h2#See-Also {
 .feed {
   float: right;
   color: #ff0;
+  font-weight: bold;
   padding-right: 1em;
   vertical-align: middle;
 }

@@ -1,4 +1,4 @@
-Title:   
+Title:   x
 Package: Data::Hive
 
 =head1 ...
