@@ -1,0 +1,205 @@
+Title:   Exceptionally Extensible Exceptions
+Package: Throwable::X
+
+=head1 Building Exception Classes with Moose
+
+Perl 5 supports exception objects natively, with C<L<die|perlfunc/die>> and
+C<L<eval|perlfunc/eval>> and C<$@>, but there has traditionally not been any
+standard, core class for exception objects.  This has been both good and bad,
+because it has encouraged many different people to produce their own exception
+classes -- some quite simple, and some quite complex.  One fairly successful
+such system was L<Exception::Class>, a framework for quickly building exception
+classes.  It provided a number of generic class-building features, and you'd
+use them to build classes for your exceptions.
+
+These days, we have a much better and more powerful system for building
+classes:  L<Moose>.  L<Throwable> is a tiny Moose role for turning generic
+Moose classes into throwable exceptions.  If you've written:
+
+  #!perl
+  package Catastrophe;
+  use Moose;
+
+  has description => (is => 'ro', isa => 'Str', required => 1);
+
+You can turn that into a throwable exception by adding...
+
+  #!perl
+  with qw(Throwable StackTrace::Auto);
+
+Now you can call use C<< Catastrophe-E<gt>throw(...) >> and it means the same
+thing as C<< die Catastrophe-E<gt>new(...) >>, and it's given a C<stack_trace>
+attribute that contains a L<Devel::StackTrace> so you can tell where the
+catastrophe happened.  "I<But wait!>" you cry, "that stack trace isn't coming
+from Throwable!"  That's right, it's not.  It's coming from another library
+that's meant to work well as part of an exception class, but it's totally
+optional.  Sometimes, after all, you want exceptions for flow control and not
+error reporting, and in those cases a stack trace is a needless expense.
+
+Over time, I've found other behaviors I really want in my exceptions, and I
+threw them all into an experimental L<Throwable::X> role -- but rather than
+actually talk about it, it will be more useful to look at the pieces that make
+up Throwable::X, because you can use them one by one.
+
+=head2 One-Arg Exception Throwing
+
+The first thing I ever did with Exception::Class was to make it possible to
+call C<throw> with only one arg.  Why give named parameters every time, if
+almost every time you call C<throw> you only need to pass one value?
+
+Throwable::X does the same thing by using L<MooseX::OneArgNew> to say, "If you
+only got one argument to C<new> (or, by extension, C<throw>), it's the C<ident>
+argument."  Since most of the time, all that's needed of a thrown exception is
+its name.  Probably better than 95% of my thrown exceptions look like this:
+
+  #!perl
+  X::Permission->throw('must run as root');
+
+=head2 Clearly-Identified Exceptions
+
+So, I said that if you gave C<throw> only one argument, it stood for the
+C<ident> argument.  What's that?
+
+Well, in Exception::Class, it would have been C<message>, which is the error
+message that the exception is giving you.  If your exception classes ar pretty
+broad (like "X::Permission" and "X::Unavailable" and similar-sized categories)
+then you'll probably end up using C<message> for more detailed information.
+So, you'll see code that looks like this:
+
+  #!perl
+  ExceptionClass::Error->throw("can't use $value as hostname");
+
+How do we detect that this is the error we got?  We do something like this:
+
+  #!perl
+  } catch {
+    if ($_->message =~ /\Acan't use .+? as hostname\z/) { ... }
+  }
+
+Regular expression matches are a pretty lousy substitute for clear
+identification -- especially when we control the exception system and could
+just I<make> our exceptions identifiable.  By using
+L<Role::Identifiable::HasIdent>, we add an C<ident> attribute that is
+guaranteed to be a simple string that we can use to identify our exceptions.
+Our classes can identify by broad strokes, but string equality with our
+C<ident> will always tell us if we have exactly the exception we expected.
+
+If the C<ident> is not supposed to contain any specifics (like the hostname
+that we say is illegal), then how do we communicate that stuff back to the
+user?
+
+=head2 Describing the Error
+
+We describe our exception with the C<message> attribute, just like we did with
+Exception::Class.  We can leave it blank, and it will default to the C<ident>.
+If we provide it, though, it acts sort of like a C<sprintf> format.  (Readers
+of last year's calendar may remember that L<< I have a soft spot for
+C<sprintf>|http://advent.rjbs.manxome.org/2009/2009-12-08.html >>.)  We might
+say something like this:
+
+  #!perl
+  X::BadValue->throw({
+    ident   => "bad nameserver hostname",
+    message => "can't use %{hostname}s for nameserver",
+    payload => { hostname => $hostname },
+  });
+
+When the C<message> is read, it gets formatted to read just like you expect,
+interpolating the value of C<$hostname> for the C<%...s> expression.  The
+formatting language is very simple and easy to implement in other languages.
+It's on the CPAN as L<String::Errf>, and has a JSON-backed test suite.  The
+named inputs come from the payload -- but they don't all need to be in the
+C<payload> hash.
+
+For example, what if we have a lot of errors related to hostnames?  We could
+write a role:
+
+  #!perl
+  package X::Role::HasHostname;
+  use Moose::Role;
+
+  has hostname => (
+    is  => 'ro',
+    isa => 'Str',
+    required => 1,
+    traits   => [ 'Payload' ],  # <-- Role::HasPayload::Meta::Attribute::Payload
+  );
+
+...then if we made an exception class with that role included, the value of the
+C<hostname> attribute would automatically be part of the payload -- and we can
+be guaranteed that it will be there, and a string, because of the attribute
+definition.  We could rewrite the above as:
+
+  #!perl
+  X::BadValue::HasHostname->throw({
+    ident    => "bad nameserver hostname",
+    message  => "can't use %{hostname}s for nameserver",
+    hostname => $hostname,
+  });
+
+This lets us write really generic exceptions to start with, but refactor to
+more specific implementations if it's ever useful.  With all the refactoring we
+might do over time, how do we keep track of what exceptions signify without
+relying on class or role names that might vary over time?  We already have an
+C<ident> for identifying specific exceptions, but we want to identify whole
+categories of exceptions.
+
+=head2 Identification by Tagging
+
+We want to be able to identify exceptions at resolutions other than "it's an
+exception" and "its ident is 'bad hostname'," so one option would be to rely on
+checking classes and roles with C<isa> and C<does>.  The problem is that we're
+probably going to be ripping apart and rebuilding classes and roles over time
+as we figure out what kind of exceptions we really need to handle.  Instead of
+tying our type checks to classes, we can tie them to something easier to
+carry around when we refactor: I<tags>.
+
+We can use L<Role::Identifiable::HasTags> to add tags to our exceptions:
+
+  #!perl
+  X::BadValue->throw({
+    ident   => "bad nameserver hostname",
+    message => "can't use %{hostname}s for nameserver",
+    payload => { hostname => $hostname },
+    tags    => [ qw(dns hostname) ],
+  });
+
+Later, refactoring like we said above, we might end up writing:
+
+  #!perl
+  package X::Role::HasHostname;
+  use Moose::Role;
+
+  add_tags { qw(hostname) };
+
+  has hostname => (
+    is  => 'ro',
+    isa => 'Str',
+    required => 1,
+    traits   => [ 'Payload' ],
+  );
+
+...and the hostname tag would no longer be required when throwing, because it
+would be implicit in the class.
+
+=head1 Picking and Choosing
+
+I think there are a number of exception extensions left to be written, most
+importantly stringification and serialization behaviors.  Because each of these
+behaviors is its own role or component, you can build your own application's
+exception classes with only the behavior you want.  You can even re-use most of
+these behaviors in other classes that have nothing to do with exceptions,
+because they're just hunks of behavior, rather than exception-specific code
+built into and inseparable from an exception library.
+
+=head1 See Also
+
+=for :list
+* L<Throwable>
+* L<Throwable::X>
+* L<MooseX::OneArgNew>
+* L<Role::Identifiable::HasIdent>
+* L<String::Errf>
+* L<Role::HasPayload::Merged>
+* L<Role::Identifiable::HasTags>
+* L<Exception::Class>
