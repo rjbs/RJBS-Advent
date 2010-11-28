@@ -1,0 +1,85 @@
+Title:   83% of Advent Remaining
+Package: Acme::ProgressBar
+
+=head1 Sufficiently Advanced (ProgressBar) Technology
+
+At L<YAPC::NA 2004|http://www.yapc.org/America/previous-years/2004/> in
+Buffalo, Damian Conway gave a talk on "Sufficiently Advanced Technologies,"
+in which he showed off a number of very simple interfaces for fairly complex
+operations.  Among the libraries he talked about was L<Smart::Comments>, a
+source filter that turns comments into code.  It had a bunch of functions, but
+one of them let you do this:
+
+  #!perl
+  use Smart::Comments:
+
+  my @input = acquire_input();
+  my @output;
+
+  for my $datum (@input) {  ### Analyzing [===|   ] % done
+    push @output, expensive_analysis($datum);
+  }
+
+...and your program would, on one line, cycle through stuff like this:
+
+  Analyzing [|                ]   0% done
+  Analyzing [===|             ]  25% done
+  Analyzing [========|        ]  50% done
+  Analyzing [============|    ]  75% done
+  Analyzing [=================] 100% done
+
+Progress bars are hard to get right!  Just look at any implementation you've
+seen in otherwise great, well-designed software, like Microsoft Windows.  They
+often provide progress bars that jump between "almost done" and "-919 days
+remain."
+
+Smart::Comments can have this problem, too, as the workload changes out from
+under it -- some items in C<@input>, for example, might be costly to analyze,
+for example.  There might be C<redo> or C<next> statements, or C<last>s, all of
+which can interfere with proper job speed detection.
+
+C<Acme::ProgressBar> is I<always> accurate.  No matter what the characteristics
+of the input are, no matter how the loop flow is altered, no matter what,
+Acme::ProgressBar is accurate.  Only system load or fatal signals can interfere
+with its accuracy.
+
+It's very easy to use, too.  It isn't a source filter, and uses no complex
+features.  It should never introduce bugs to your code and can be added or
+removed to your code easily.  Written with Acme::ProgressBar instead, the above
+code would look like this:
+
+  #!perl
+  use Acme::ProgressBar;
+
+  my @input = acquire_input();
+  my @output;
+
+  progress {
+    for my $datum (@input) {
+      push @output, expensive_analysis($datum);
+    }
+  };
+
+...and would produce output like this (but all on one line, and I've omitted
+some lines for brevity's sake):
+
+  Progress: [          ] (calculating time remaining)
+  Progress: [==        ] 8s remaining                         
+  Progress: [====      ] 6s remaining                         
+  Progress: [======    ] 4s remaining                         
+  Progress: [========  ] 2s remaining                         
+  Progress: [==========] 0s remaining                         
+
+There can be a performance cost for using Acme::ProgressBar, but the impact
+varies from program to program.  You should test it in your code before judging
+the performance costs.
+
+L<The source
+code|https://github.com/rjbs/acme-progressbar/blob/master/lib/Acme/ProgressBar.pm>
+for Acme::ProgressBar may also be instructive.
+
+=head1 See Also
+
+=for :list
+* L<Acme::ProgressBar>
+* L<Smart::Comments>
