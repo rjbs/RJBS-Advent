@@ -1,0 +1,158 @@
+Title:  It's a Time for Tolerance
+Package: Number::Tolerant
+
+=head1 Secret Origins!
+
+Once upon a time, I was called upon to write a database for complex
+L<semiconductor growth|http://en.wikipedia.org/wiki/Epitaxy> specifications.
+Very often, the specification would state that a given measurement had to be
+within a certain tolerance, rather than a specific value.  For bizarre
+semi-political reasons, we couldn't just provide outer limits and shoot for a
+center point.  We had to track, through all parts of the system, the specific
+way in which the specification was... specified.  That might be like any of the
+following:
+
+  5
+  > 5
+  ≥ 5
+  < 5
+  ≤ 5
+  5 ± 1
+  5 ± 20%
+  4 .. 6
+  5 (-1 to +2)
+
+At the time, the need to stick to a given format was frustrating, but it drove
+me to write a library that has proven itself useful again and again -- mostly
+in weird situations, but I'm still happy to have a tool I only use once in a
+while.
+
+=head1 Tolerance in Form and Action
+
+A tolerance is an object that acts like a number for the sake of comparison.
+
+Rather than struggle to contrive a generic example, I'll talk about how this
+code was originally used.  Our customer is going to come to us with a
+specification for a product, and we want to be able to record that
+specification, overlay our own specifications, and then test results against
+it.  The customer might give us the following set of requirements:
+
+  #!perl
+  use Number::Tolerant;
+
+  $spec{customer} = {
+    width  => tolerance(qw( 10  plus_or_minus       2)),
+    depth  => tolerance(qw( 182 plus_or_minus_pct   5)),
+    weight => tolerance(qw( less_than 10 )),
+    hue    => tolerance(qw( 630 to 740)),
+  };
+
+Internally, we know what our production equipment's capabilities are:
+
+  #!perl
+  $spec{machine} = {
+    width  => tolerance(qw( 7 to 10 )),
+    depth  => tolerance(qw( less_than 184 )),
+    weight => tolerance(qw( less_than 50 )),
+    hue    => 675,
+  };
+
+...and engineering doesn't want to use anything too heavy, and have done some
+final design work, so they tack on:
+
+  #!perl
+  $spec{engineering} = {
+    width  => 9,
+    weight => tolerance(qw( less_than 2 )),
+  };
+
+Now we have a bunch of different, separate specification documents, and we can
+have a quick review of them all:
+
+  #!perl
+  sub tol_string {
+    my $tol = shift;
+    join qq{\n}, map {; sprintf "%10s %s", $_, $tol->{$_} } sort keys %$tol;
+  }
+
+  for (keys %spec) {
+    print "\U$_\n", tol_string( $spec{$_} ), "\n";
+  }
+
+...to get...
+
+  CUSTOMER
+       depth 182 +/- 5%
+         hue 630 <= x <= 740
+      weight x < 10
+       width 10 +/- 2
+  ENGINEERING
+      weight x < 2
+       width 9
+  MACHINE
+       depth x < 184
+         hue 675
+      weight x < 50
+       width 7 <= x <= 10
+
+Composing these together is easy:
+
+  #!perl
+  my $final_spec = {};
+  
+  for (keys %spec) {
+    my $this_spec = $spec{$_};
+
+    for (keys %$this_spec) {
+      $final_spec->{ $_ } ||= tolerance('infinite');
+      $final_spec->{ $_ }  &= $this_spec->{$_};
+    }
+  }
+
+  print tol_string($final_spec);
+
+...and we get:
+
+     depth 172.9 <= x < 184
+       hue 675
+    weight x < 2
+     width 9
+
+What just happened?  Well, tolerances can be joined together logically with
+intersections and unions.  When we want to produce the intersection of a bunch
+of tolerances, we just use the C<&> operator.  Or, if you want to avoid weird
+overloading, you can use the C<union> method.  When unions intersect, the
+result is either a new tolerance (like the unified depth specification above)
+or a constant giving the only permissible value.  When a union would produce an
+impossible tolerance, an exception is thrown.  I accidentally caused one of
+those when writing the above code.  I'd picked a bad C<hue> for the machine
+spec and got:
+
+  No valid intersection of (630 <= x <= 740) and (775) at...
+
+Once we've gotten our final product, it's easy to test against the spec:
+
+  #!perl
+  my $final_product = get_final_product;
+
+  my @errors;
+  for my $prop (keys %$final_product) {
+    next unless exists $final_spec->{ $prop };
+
+    my $value = $final_product->{ $prop };
+    my $spec  = $final_spec->{ $prop };
+
+    next if $value == $spec;
+    push @errors, "$prop ($value) outside of specification ($spec)";
+  }
+
+  say for @errors;
+
+...which might produce an error like:
+
+  weight (2.2) outside of specification (x < 2)
+
+=head1 See Also
+
+=for :list
+* L<Number::Tolerant>
