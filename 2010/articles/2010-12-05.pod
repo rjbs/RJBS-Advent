@@ -152,7 +152,30 @@ Once we've gotten our final product, it's easy to test against the spec:
 
   weight (2.2) outside of specification (x < 2)
 
+=head2 Testing with Tolerance
+
+Tolerances can also be handy for running automated tests.  An output file's
+size should fall into a given range, or we should process no more than a
+certain number of records, and so on.  Using Number::Tolerant with tests can be
+useful when tolerances must be combined -- but it's often just easier to use
+than Test::More's C<cmp_ok>, which has pretty gross semantics.  For example,
+compare:
+
+  #!perl
+  use Test::More;
+  cmp_ok($x, '>', 10);
+  cmp_ok($x, '<', 20);
+
+to:
+
+  #!perl
+  use Test::Tolerant;
+  is_tol($x, '10 < x < 20');
+
+L<Test::Tolerant> is part of the Number-Tolerant distribution.
+
 =head1 See Also
 
 =for :list
 * L<Number::Tolerant>
+* L<Test::Tolerant>
