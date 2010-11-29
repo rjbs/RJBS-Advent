@@ -59,9 +59,9 @@ dt {
 }
 
 #note {
-  background: #ff1460;
+  background: #be000c;
   border: 1px solid #575;
-  color: #000;
+  color: #fff;
 }
 
 .pod h1, .pod h2 {
@@ -168,7 +168,7 @@ pre {
 }
 
 .calendar td.day.advent.future {
-  background: #be000c;
+  background: #660000;
 }
 .calendar td#dec-25 {
   background: #f2e184;
