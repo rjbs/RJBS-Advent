@@ -1,0 +1,120 @@
+Title:  Safe, Simple, Deadly
+Package: Test::Fatal
+
+=head1 Making Exception Testing Easier
+
+I do not like "returns false on failure."  Even worse is "returns a result or
+some magic error value."  Part of this is based in reason and part in
+irrational reaction to a personal history of dealing with really, really bad
+APIs.  The result is that when I write a subroutine that returns a value, it's
+very likely to follow these simple rules:
+
+=for :list
+1. return a value of a known type, if everything worked; "false" is okay too
+2. if something went wrong, throw an exception
+
+I I<do> like testing my code.  Testing case 1, from above, is easy!
+
+  #!perl
+  use Gift::Wrapper qw(wrap);
+  use Test::More;
+
+  my $gift = wrap( $input );
+  
+  isa_ok($gift, 'Wrapped::Gift');
+  is( $gift->contents, $input );
+
+That's nice and simple and straightforward!  There's no code there that doesn't
+contribute to the veyr thing we're testing.  What about testing case 2, though
+
+  #!perl
+  use Gift::Wrapper qw(wrap);
+  use Test::More;
+
+  my $okay  = eval { wrap( $coal ); 1 };
+  my $error = $@;
+  
+  ok( ! $okay, "we can't wrap coal");
+  is( $error->ident,  'coal is not a good gift');
+
+That "eval and check result and capture C<$@>" is going to get pretty tedious,
+pretty quickly.  Also, if our tests are part of some larger test program --
+which they probably are -- then we're missint a bunch of extra safety.  That's
+why we'd I<never> use C<eval>, right?  We all use L<Try::Tiny> instead!  With
+that, our code would look like this:
+
+  #!perl
+  use Gift::Wrapper qw(wrap);
+  use Test::More;
+
+  my $error;
+  try {
+    wrap( $coal )
+  } catch {
+    $error = $_;
+  } finally {
+    die "bizarre error condition" if @_ and not $_[0];
+  };
+  
+  ok( ! $okay, "we can't wrap coal");
+  is( $error->ident,  'coal is not a good gift');
+
+Woah, what?  Now we're in a world of hurt, and there's no chance that we'll
+ever write that over and over.  And what's up with that C<finally> block with
+the weird C<die>?  Well, Perl has some really bizarre (read: awful) semantics
+with exception handling, and in a number of cases it can die but leave C<$@>
+empty.  Try::Tiny helps us deal with these situations, but only at the first
+order.  Here, we want a higher-order check of our exception status.
+
+Obviously, this is all lead in to the simple way to check this:
+
+  #!perl
+  use Gift::Wrapper qw(wrap);
+  use Test::More;
+  use Test::Fatal;
+
+  my $error = exception { wrap( $coal ) };
+
+  isnt( $error, undef, "we can't wrap coal");
+  is( $error->ident, 'coal is not a good gift' );
+
+C<exception> always returns a scalar: the exception that was thrown, if any, or
+C<undef> otherwise.  In the event that the code died, but no exception could be
+found -- a highly problematic case -- C<exception> itself will die.  The
+routine's "returns a scalar" behavior makes it excellent for use inline in test
+assertions:
+
+  #!perl
+
+  # test that we died
+  ok( exception { wrap( undef)  }, "no empty boxes!" );
+
+  # test that we got the exception we wanted, more or less
+  like(
+    exception { wrap( 'gift certificate' ) },
+    qr{show some imagination!},
+  );
+
+  # test that we lived!
+  ok(
+    ! exception { wrap( "toy train" ) },
+    "nothing wrong with wrapping a toy train",
+  );
+
+=head2 A Quick Note about Test::Exception
+
+Test::Fatal is not the only library for this kind of testing.  There also
+exists L<Test::Exception>, which also provides tools for testing.
+Test::Exception has more moving pieces than Test::Fatal, including the highly
+complex L<Sub::Uplevel>.  In almost all cases, its complexity is not needed,
+and you will be better served by the simple C<exception> routine than by the
+handful of test assertions provided by Test::Exception -- but it takes all
+kinds.
+
+=head1 See Also
+
+=for :list
+* L<Test::Fatal>
+* L<Try::Tiny>
+* L<Test::Exception>
+* L<Sub::Uplevel>
