@@ -1,7 +1,7 @@
 Title:  A Logging Library that Really Stinks
 Package: Log::Dispatchouli
 
-=head1 Could you just use...
+=head1 Couldn't you just use...
 
 Yeah, probably.  After all, there are over one hundred logging libraries on the
 CPAN.  Probably there's something out there that's tolerable.  The question is
