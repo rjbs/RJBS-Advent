@@ -20,9 +20,9 @@ available on the CPAN?  We picked the usual strategy:  figure out what
 everybody else was using.  The winner was L<Log::Log4perl>, and we wrote up
 notes on how we'd go about standardizing, which mostly meant writing a
 comprehensive configuration and then using it everywhere.  We got about as far
-as figuring out what syslog facilities to use for what and the balked.  It felt
-like there were too many options to really move forward.  We needed freedom
-from all that choice.
+as figuring out what syslog facilities to use for what and then balked.  It
+felt like there were too many options to really move forward.  We needed
+freedom from all that choice.
 
 Our alternative had been L<Log::Dispatch>, which has many of the same
 properties as Log4perl, but is less complex.  In fact, we had quite a bit of
