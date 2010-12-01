@@ -169,6 +169,7 @@ pre {
 
 .calendar td.day.advent.future {
   background: #660000;
+  color: #fff;
 }
 .calendar td#dec-25 {
   background: #f2e184;
