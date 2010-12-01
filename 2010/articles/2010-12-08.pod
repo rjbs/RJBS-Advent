@@ -1,0 +1,176 @@
+Title:  Option Processing -- This Time, Invented Here!
+Package: Getopt::Long::Descriptive
+
+=head1 Everybody's Favorite Getopt
+
+This isn't everybody's favorite getopt.  It's I<my> favorite getopt, and it
+might be the favorite of some other people, but the problem with getopt
+libraries is that they can be optimized for so many different needs... but most
+of the time no optimization is needed, so we each get attached to the library
+we're using most often, forgetting that there are lots of reasons to choose
+differently.
+
+Well, I'm not here to tolerate other people's libraries.  The L<time for
+tolerance|http://advent.rjbs.manxome.org/2010/2010-12-05.html> is past.  I'm
+going to talk about I<my> favorite getopt library.  In what may be a first for
+the RJBS Advent Calendar, it's a library I didn't write.  It was written by my
+former co-worker L<Dieter|http://search.cpan.org/~hdp/>, and I remember very
+clearly how happy I was when I started that the "which getopt?" question had
+not only been answered already, but had been answered with a library that I
+liked using.
+
+=head2 Our Optimizations
+
+So, if all getopt libraries make tradeoffs, what are ours?  We wanted it to be
+very easy to read and write option specifications, and we I<needed> the command
+to get a usage message that was I<always> correct and up to date with the usage
+message.  Our non-technical staff all use a Unix shell, and run a lot of
+command-line programs.  They need to have useful help messages to forestall
+questions about how to use things.
+
+To use Getopt::Long::Descriptive (aka GLD), you basically describe the options
+you'd like to accept and get back the options parsed from C<@ARGV> and an
+object representing the "usage message."  Here's a fairly complete program
+using GLD:
+
+  #!perl
+  my ($opt, $usage) = describe_options(
+    '%c %o recipient  ...',
+
+    [ 'template|t=s', "the HTML template for the card", { default => 'card.html' } ],
+    [ 'from|f=s',     "the sending address", { required => 1 } ],
+    [],
+    [ "text-mode" => hidden => {
+      required => 1,
+      one_of   => [
+        [ "html-only"    => "send no plaintext part" ],
+        [ "autotext"     => "generate plaintext from HTML" ],
+        [ "text-tmpl=s"  => "filename for a separate plaintext template" ],
+        ],
+    } ],
+  );
+
+  my @rcpts = @ARGV;
+  $usage->die({ pre_text => "no recipients given!" }) unless @rcpts;
+
+  my $html_template = slurp( $opt->template );
+  my $text_template = $opt->text_mode eq 'html_only' ? undef
+                    : $opt->text_mode eq 'autotext'  ? textify($html_template)
+                    : $opt->text_mode eq 'text_tmpl' ? slurp( $opt->text_tmpl )
+                    : ... ;
+
+  for my $rcpt (@rcpts) {
+    send_card({
+      html => render( $html_template, $rcpt ),
+      text => render( $text_template, $rcpt ),
+
+      to   => $rcpt,
+      from => $opt->from,
+    });
+  }
+
+Some of this is obvious, especially if you know Getopt::Long, but have another
+slow read through the code, and then we'll walk through it piece by piece.
+
+=head2 C<describe_options>
+
+  #!perl
+  my ($opt, $usage) = describe_options(
+    '%c %o recipient  ...',
+
+    [ 'template|t=s', "the HTML template for the card", { default => 'card.html' } ],
+    [ 'from|f=s',     "the sending address", { required => 1 } ],
+    [],
+    [ "text-mode" => hidden => {
+      required => 1,
+      one_of   => [
+        [ "html-only"    => "send no plaintext part" ],
+        [ "autotext"     => "generate plaintext from HTML" ],
+        [ "text-tmpl=s"  => "filename for a separate plaintext template" ],
+        ],
+    } ],
+  );
+
+C<describe_options> doesn't really I<just> describe the options.  It parses the
+command line arguments by reading C<@ARGV> and returns an object describing the
+switches that were given (C<$opt>) and another object that can be used to print
+out a usage message in case of error.  If C<@ARGV> can't be parsed legally,
+that message is printed and the program dies, something like this:
+
+  send-holiday-card [-ft] [long options...] recipient ...
+    -t --template     the HTML template for the card
+    -f --from         the sending address
+  
+    --html-only       set no plaintext part
+    --autotext        generate plaintext from HTML
+    --text-tmpl       filename for a separate plaintext template
+
+The first argument to C<describe_options> produces the first line of the usage
+message.  It uses C<sprintf>-like formatting, letting you get the name of the
+script and a quick summary of available options into the usage message.
+
+After that, everything describes options.  Each argument is an arrayref with up
+to three entries:
+
+  #!perl
+  [  $switch, $description, \%options ]
+
+The contents of C<$switch> value might look familiar.  It's just a
+Getopt::Long-style description of the switch.  GLD is not so ambitious as to
+try to implement its own argument processor!  It's just a layer on top of
+Getopt::Long and some other tools.  So, every C<$switch> value can have a few
+names, separated by pipes.  The first name (with some mild munging, like
+C<s/-/_/>, becomes the name of the accessor on C<$opt>.  That's why later we
+can call C<< $opt->from >> to get the value given for C<--form>.
+
+The C<$description> field is just the description for the option in the usage
+message.  The description "hidden" means that an option isn't displayed in the
+usage message, and an entirely empty option, like C<[]>, by the way, means "put
+a blank line in the usage message."
+
+C<%options>, which is optional, changes how the switch is interpreted.  It can
+take a bunch of options, but the most common are C<required> and C<default>,
+which change what happens if no value was given.  The value can also be
+validated by using L<Params::Validate> arguments.
+
+The most interesting kind of option is C<one_of>, as seen in:
+
+  #!perl
+    [ "text-mode" => hidden => {
+      required => 1,
+      one_of   => [
+        [ "html-only"    => "send no plaintext part" ],
+        [ "autotext"     => "generate plaintext from HTML" ],
+        [ "text-tmpl=s"  => "filename for a separate plaintext template" ],
+        ],
+    } ],
+
+C<one_of> is usually used in combination with C<hidden>, and creates a sort of
+virtual option.  C<< $opt->text_mode >> will tell us which of the sub-options
+was used, and then we can check that option's value.  Only one of the
+sub-options can be specified.   That's why we could safely write this:
+
+  #!perl
+  my $text_template = $opt->text_mode eq 'html_only' ? undef
+                    : $opt->text_mode eq 'autotext'  ? textify($html_template)
+                    : $opt->text_mode eq 'text_tmpl' ? slurp( $opt->text_tmpl )
+                    : ... ;
+
+C<one_of> options are useful for establishing mutually exclusive kinds of
+operation, and were originally set up to create something like a "run mode."
+There'd be a hidden C<mode> option, and the user would pick C<one_of> "delete"
+or "add" or "list," for example.  Our use of virtual options for that has faded
+after the creation of
+L<App::Cmd|http://advent.rjbs.manxome.org/2009/2009-12-14.html>, a framework
+for slightly more complicated applications.  App::Cmd helps make command-line
+applications easy to write, but it isn't so ambitious as to try to provide its
+own getopt implementation:  to use App::Cmd properly, you need to first
+understand Getopt::Long::Descriptive.
+
+=head1 See Also
+
+=for :list
+* L<Getopt::Long::Descriptive>
+* L<Getopt::Long>
+* L<Params::Validate>
+* L<App::Cmd>
