@@ -1,10 +1,170 @@
-Title:   x
+Title:   A Place to Shove Your Settings
 Package: Data::Hive
 
-=head1 ...
+=head1 Because 132 Fields Ought To Be Enough for Anybody
 
+A long time ago, I inherited a lot of shares in a pretty crufty old system.
+Like almost everything else you're likely to find at a small software place, it
+had a bunch of objects that it stored in relational database -- and like you'd
+find a lot of places, there weren't enough tables.  (I once heard this problem
+described as, "It's like some programmers think that they're charged by the
+table.")  We had thousands of rows, each with well over a hundred fields, and
+we'd end up finding great stuff like this:
+
+  mysql> SELECT use_oxford_comma, COUNT(*)
+       > FROM customers
+       > GROUP BY use_oxford_comma;
+
+  +------------------+----------+
+  | use_oxford_comma | COUNT(*) |
+  +------------------+----------+
+  | NULL             |    89162 |
+  | 1                |        8 |
+  | yes              |        1 |
+  +------------------+----------+
+
+Creating extra tables for this sort of setting was the right thing to do, but
+that would've been a lot of tables, and let's face it: there I<is> a charge per
+table.  You have to add the table, add the class to your ORM, and update
+queries.  Query costs change when you add more FKs between tables.  We wanted
+to strike a balance between hundreds of rarely-used table and only one enormous
+table by offloading weird nearly-one-off data someplace else.  The answer was 
+pseudo-structured data storage in a key-value store.  Not MongoDB or CouchDB or
+something like that, mind you -- just a table that looks something like this:
+
+  #!vim sql
+  CREATE TABLE customer_hive (
+    id          INTEGER AUTO_INCREMENT PRIMARY KEY,
+    customer_id INTEGER REFERENCES customers (id),
+    hive_key    STRING,
+    hive_val    STRING,
+    UNIQUE KEY (customer_id, hive_key)
+  );
+
+What are the hive key and value?  The key is a L<materialized
+path|http://use.perl.org/~Ovid/journal/39460> for the value, which is just,
+well, a value.  Every value can only be typed as a string, but that's okay.  If
+we get worried about the type, we'll move the data to its own table later.  So,
+what do entries in this table look like?  Maybe something like this:
+
+  mysql> SELECT hive_key, hive_val FROM customer_hive WHERE customer_id = 123;
+
+  +-------------------------------------------+----------+
+  | hive_key                                  | hive_val |
+  +-------------------------------------------+----------+
+  | formatting.use_oxford_comma               |   always |
+  | formatting.spaces_after_period            |        2 |
+  | reports                                   |        1 |
+  | reports.activity.daily.include_moon_phase |        1 |
+  +-------------------------------------------+----------+
+
+So we're really storing something like this:
+
+                                     (root)
+                                    /      \
+                                   /        \
+                         formatting          \
+                            /      \          reports: 1
+        use_oxford_comma: always    \               \
+                                     \              activity
+                        spaces_after_period: 2            \
+                                                         daily
+                                                          \
+                                                          include_moon_phase: 1
+
+(Notice that this can't be represented as a hash, because we have parts of the
+hierarchy, like C<reports> that have both values and subtrees!)
+
+What we needed next was a convenient way to access these data, and that's where
+L<Data::Hive> came in to play.
+
+=head2 Yet Another Hashes-as-Objects Schema
+
+We called this structure a hive, in honor of the Windows registry -- always a
+good role model for software design.  We wanted it to be as simple to use for
+new data as possible, so we could just plow forward with new code and never
+think about how the settings were being saved.  If the setting became important
+or significantly-used, we could move it, later, to a more strictly-typed part
+of the schema.  For now, the goal was to allow for rapid development.  The
+interface for setting up a hive like the one above would be:
+
+  #!perl
+  my $hive = Data::Hive->NEW( ... );
+
+  $hive->formatting->use_oxford_comma->SET('always');
+  $hive->formatting->spaces_after_period->SET(2);
+
+  $hive->reports->SET(1);
+  $hive->reports->activity->daily->include_moon_phase->SET(1);
+
+...and maybe later...
+
+  #!perl
+  if ($hive->formatting->use_oxford_comma->GET('never')) { # never = default
+    ...
+  }
+
+That's it!  Now, we didn't have to predeclare any of the potential structure of
+our hive -- that would not be simple enough.  So, how did these methods work?
+Well, we're using another usually-the-wrong-solution feature of Perl,
+L<autoloading|perlsub/Autoloading>.  As you call not-all-caps methods, you just
+keep getting back another proxy object for the path you build.  Eventually, you
+call something like C<GET> or C<SET> or C<DELETE> to deal with the underlying
+data.
+
+=head2 Hooking it All Up
+
+So, where I<is> the underlying data?  Data::Hive doesn't care.  Its concern is
+mapping the path-descending interface to something else -- and that something
+else is a storage driver.  In other words, "bring your own underlying data
+access code."  For the sake of testing, it comes with some simple storage
+drivers that store hives in hashrefs.  This isn't too useful, though, because
+we (or I, at least) want to use hives to store persistent data.  Fortunately,
+one of our drivers can store to anything implementing a set of
+L<CGI.pm|CGI>-like C<params> methods.
+
+We also don't just want standalone hives.  We want hives that are associated
+with other objects.  We want to be able to decorate any arbitrary object with a
+hive to add ad hoc hierarchical data to an object.  We looked at a system for
+doing this in last year's calendar; there was a whole article about
+L<Mixin::ExtraFields|http://advent.rjbs.manxome.org/2009/2009-12-22.html>.
+(You might want to review it.)  ExtraFields I<also> has storage drivers, some
+of which persist the extra fields into databases.  There's also a
+Data::Hive-specific subclass that lets you associate hives with objects just
+like you can extras.
+
+What does that mean?  It means that for any object you want, you can write
+something like this:
+
+  #!perl
+  package MyApp::Customer;
+
+  use Mixin::ExtraFields::Hive -hive => {
+    driver => {
+      class  => 'DBIC',
+      schema => sub { MyApp::Schema->connect(...) },
+      rs_moniker   => 'CustomerHive',
+      name_column  => 'hive_key',
+      value_column => 'hive_val',
+    }
+  };
+
+That little C<use> statement means that we can now write:
+
+  #!perl
+  my $formatting_hive = $customer->hive->formatting;
+
+  $formatting_hive->use_oxford_comma->DELETE;
+  $formatting_hive->page_numbers->number_index->SET(1);
+
+...and all the changes will be made for us in a L<DBIx::Class>-managed table,
+without any need to worry about how it works.  Later, we can change the backend
+for storage and nothing needs to know.
 
 =head1 See Also
 
 =for :list
 * L<Data::Hive>
+* L<Mixin::ExtraFields>
+* L<Mixin::ExtraFields::Hive>
+* L<Mixin::ExtraFields::Driver::DBIC>
