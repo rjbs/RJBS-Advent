@@ -38,8 +38,8 @@ error reporting, and in those cases a stack trace is a needless expense.
 
 Over time, I've found other behaviors I really want in my exceptions, and I
 threw them all into an experimental L<Throwable::X> role -- but rather than
-actually talk about it, it will be more useful to look at the pieces that make
-up Throwable::X, because you can use them one by one.
+actually talk about I<that>, it will be more useful to look at the pieces that
+make up Throwable::X, because you can use them one by one.
 
 =head2 One-Arg Exception Throwing
 
@@ -54,6 +54,16 @@ its name.  Probably better than 95% of my thrown exceptions look like this:
 
   #!perl
   X::Permission->throw('must run as root');
+
+Making that work just means adding this to our role or class:
+
+  #!perl
+  with 'MooseX::OneArgNew' => {
+    type     => 'Throwable::X::_VisibleStr',
+    init_arg => 'ident',
+  };
+
+You can do that in any Moose class or role, by the way, not just exceptions!
 
 =head2 Clearly-Identified Exceptions
 
@@ -81,8 +91,8 @@ identification -- especially when we control the exception system and could
 just I<make> our exceptions identifiable.  By using
 L<Role::Identifiable::HasIdent>, we add an C<ident> attribute that is
 guaranteed to be a simple string that we can use to identify our exceptions.
-Our classes can identify by broad strokes, but string equality with our
-C<ident> will always tell us if we have exactly the exception we expected.
+Our classes can identify exceptions in broad groups, but string equality with
+our C<ident> will always tell us if we have exactly the exception we expected.
 
 If the C<ident> is not supposed to contain any specifics (like the hostname
 that we say is illegal), then how do we communicate that stuff back to the
@@ -181,6 +191,9 @@ Later, refactoring like we said above, we might end up writing:
 
 ...and the hostname tag would no longer be required when throwing, because it
 would be implicit in the class.
+
+(The tags role is still in a bit of flux as it is rewritten to use
+L<MooseX::ComposedBehavior>.  More on that another day.)
 
 =head1 Picking and Choosing
 
