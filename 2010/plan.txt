@@ -11,12 +11,12 @@
    3 - Throwable::X
    4 - Acme::ProgressBar
    5 - Number::Tolerant
-   6 - 
+   6 - (gopher day)
    7 - Test::Fatal
    8 - Getopt::Long::Descriptive
    9 - Data::Hive
   10 - DNS::Oterica
-  11 - Games::Nintendo::Mario
+  11 - Games::Nintendo::Mario or fewer
   12 - Data::InputMonster
   13 -
   14 - Test::BinaryData
@@ -33,6 +33,9 @@
   25 - *
 
 ___[ backups.txt ]___
+Net::Gopher::Server
+Querylet?
+
 Color::Palette
 String::Errf
 App::Whiff

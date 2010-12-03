@@ -1,0 +1,202 @@
+Title:  Feast of St. Burl
+Package: Net::Gopher::Server
+
+=head2 NOT ON CPAN
+
+Today's article is about code not found on the CPAN.
+
+=head1 The Good Old Days
+
+Today is the feast of St. Burl, the little known patron saint of gophers.  In
+his honor, I'd like to talk a little about the Gopher protocol and my on-again,
+off-again affection for it.
+
+Since I first made a home page some time around 1995, it has included an
+opening something like this:
+
+=for html <blockquote>
+
+I made my first home page back when HTML 1.1 was just coming out and some guy
+named Mozilla was releasing Netscape, which he said would replace the NCSA
+Mosaic browser. I'll let you in on a little secret: I didn't believe for a
+minute that HTTP would replace such tried-and-true services as Archie,
+Veronica, and (my favorite) Gopher.
+
+=for html </blockquote>
+
+Eventually, though very late, I accepted that Gopher was done for, but I'd
+think back on it fondly from time to time.  As HTML and CSS and JavaScript and
+XML and the rest of the web got more and more complicated, and there were more
+and more "best viewed in Webbernet SurfPro" badges or "required plugin missing"
+errors, I'd remember the nice, simple Gopher system.  You'd basically get two
+things from it:  directories and files.  There was nothing to screw up!
+
+Years later, when I had learned how to write non-trivial programs, I decided I
+would write a Gopher server, which meant reading [the Gopher
+spec](http://www.faqs.org/rfcs/rfc1436.html).  It looked sort of weird, but
+easy enough to implement a test server:
+
+  #!perl
+  use strict;
+  use warnings;
+  use IO::Socket;
+
+  my $port = 70;
+  my $crlf = "\015\012";
+
+  my $socket = IO::Socket::INET->new(
+    Proto     => 'tcp',
+    LocalPort => $port,
+    Listen    => 128,
+    Reuse     => 1
+  );
+
+  warn "waiting for incoming connections on port $port...\n";
+
+  while (1) {
+    next unless my $connection = $socket->accept;
+    if (fork) {
+      $connection->close;
+      next;
+    } else {
+      $connection->autoflush(1);
+      my $request = $connection->getline;
+
+      $request =~ s/$crlf//g;
+      print STDERR "REQUEST: $request\n";
+
+      if ($request eq '' or $request eq '/') {
+        $connection->print("1Directory Listing\t/\tlocalhost\t70$crlf");
+        $connection->print("0README.TXT\tREADME.TXT\tlocalhost\t70$crlf");
+        $connection->print("0README.TxT\tREADME.TxT\tlocalhost\t70$crlf");
+        $connection->print(".$crlf");
+      }
+      
+      $connection->close;
+    }
+  }
+
+  $socket->close;
+
+All this server could do was print a directory.  You could ask for the other
+stuff it had to offer, but you wouldn't get it.  Anyway, the directory is good
+enough for us to look at Gopher a little.  It's a bunch of tab-delimited lines,
+which would look like this, as a table:
+
+  +--------------------+------------+-----------+------+
+  | Type, Display Name | Selector   | Host      | Post |
+  +--------------------+------------+-----------+------+
+  | 1Directory Listing | /          | localhost |   70 |
+  | 0README.TXT        | README.TXT | localhost |   70 |
+  | 0README.TxT        | README.TxT | localhost |   70 |
+  +--------------------+------------+-----------+------+
+
+The Gopher request to get that listing goes like this:
+
+  CLIENT: connect, send "/" and CRLF
+  SERVER: send tab-delimited lines, followed by . and CRLF, then disconnect
+
+Simple!
+
+When the Gopher client gets that table, it turns it into a menu like this:
+
+  [ Dir  ]  Directory Listing
+  [ File ]  README.TXT
+  [ File ]  README.TxT
+
+The user can pick one of three options and get a new document.  The first
+option leads to another directory and the other two lead to files.  We know
+this because the first character of the lines was either C<0> (a directory) or
+C<1> (a file).  This is crucial, because we need to know, if we're getting a
+text file, that we shouldn't look for tabs and display it as a menu.
+
+This leads to the first big problem.  See, imagine what happens if we try to
+get F<README.TXT>:
+
+  CLIENT: connect, send "README.TXT" and CRLF
+  SERVER: send a bunch of lines, followed by . and CRLF, then disconnect
+
+How do we know that what we got back was a text file and not a directory
+listing?  There's nothing in the request or the response telling us.  We need
+to know I<before> making the request, because the I<directory> told us what to
+expect.  Gopher predates URIs, but if it didn't, we might imagine that the URI
+for the README file was the whole line:
+
+  0README.TXT\tREADME.TXT\tlocalhost\t70 
+
+In fact, when Gopher was given its own scheme, the above locator would look
+read C<gopher://localhost:70/0README.TXT> but it would often be rewritten as 
+C<gopher://localhost:70/0/README.TXT>.  (In HTTP this problem doesn't exist,
+because every response includes a declaration of the type of the content.)
+
+So, what does this mean in practical terms?  My first guess was that it just
+meant that we'd have a simple transport layer to get bodies, and then a
+slightly more complex presentation layer to display the body based on what it
+expected.  Unfortunately, that doesn't play out.  See, zero and one aren't the
+only content types.  There are about 124 possible values, although only a few
+are assigned.  Here are two troublesome ones that are assigned:
+
+  5 - binary file (for DOS)
+  9 - binary file
+
+(How do the two differ?  Nobody seems to have any idea.)
+
+The trouble is that you're prohibited from encoding binary files, even if they
+contain the pattern CRLF-dot-CRLF.  That means you can't detect the end of
+stream, and there may not be a terminal CRLF.  So, the client must wait until
+the server disconnects and B<must not> truncate any trailing dot-CRLF.  In that
+case, how does it know when to stop reading?  Only by getting hung up on.  That
+means that the context of the request (that is, its appearance in some
+containing directory) influences not only the presentation, but also the
+behavior of the network client.
+
+If it doesn't get that "end of body" sentinel, how does it know that it got the
+whole document?  Well, it doesn't.
+
+There are some other weird type identifiers.  "g" means a GIF image, and "I"
+means "some kind of image file."  (It's assumed that with broad types like "I"
+the client will decide what to do by interpreting the selector as a file name
+and looking at the extension.)  Both "g" and "I" can be dot-terminated.  "7"
+means "search engine," and the client prompts the user for a search string to
+be concatenated to the selector before fetching.  "7" is assumed to actually
+return a directory (a "1").
+
+There are even some types for other protocols.  For example, "T" points to an
+interactive tn3270 session.  I must admit to being moved by feelings of
+nostalgia like that -- like finding "troff" as a top-level MIME-type-like
+classification for in an early email RFC.  If we added "h" as a type for
+HTTP, we could say:
+
+  +--------------------+------------+-------------------------+------+
+  | Type, Display Name | Selector   | Host                    | Post |
+  +--------------------+------------+-------------------------+------+
+  | hAdvent Calendar   | /2010      | advent.rjbs.manxome.org |   70 |
+  +--------------------+------------+-------------------------+------+
+
+We don't need to mandate that "h" also means "expect HTML," because HTTP
+requires that the server tell us what it's giving us.  Once we're off into HTTP
+land, we really have entered a I<web> of interconnected documents of all types,
+using I<uniform> resource locators.  (Did you notice, by the way, that because
+Gopher gives us "links" only in directory listings, we can't provide hypertext
+in Gopher without a new type definition?  A text file ("0") in Gopher can't
+contain links.
+
+=head1 Today's Gift, As-Is
+
+I still sometimes think back on the I<apparent> simplicity of Gopher.  It could
+be emulated in HTML pretty easily.  Maybe I'll write a DTD for a subset of
+XHTML that gets you something like Gopher.  In the past, though, I was young
+and idealistic and less willing to compromise.  I really wanted to write a
+fun little framework for Gopher servers in Perl.  I even wanted to make it part
+of my 2009 Advent calendar, but disappointment with the protocol and its
+implications for implementing and testing overwhelmed me.
+
+I have since given up the idea of ever finishing it, so I present to you,
+unfinished, L<Net::Gopher::Server|https://github.com/rjbs/net-gopher-server>!
+
+=head1 See Also
+
+=for :list
+* L<Net::Gopher::Server|https://github.com/rjbs/net-gopher-server>
+* L<Net::Gopher|http://www.backpan.org/distribution/Net-Gopher/>
+* L<Gopher::Server>
