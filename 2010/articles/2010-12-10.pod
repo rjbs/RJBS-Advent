@@ -62,7 +62,7 @@ this:
   ')
 
 So this file was a relic of days gone by, produced by programmers who had long
-since moved on to other ventures.  Everybody shop this kind of system: it
+since moved on to other ventures.  Every shop has this kind of system: it
 works, its custodians can make very basic adjustments to it, but nobody dares
 make significant changes.  Unfortunately, these kind of systems usually get
 built very early in a product's lifecycle, to solve very important problems
@@ -81,9 +81,9 @@ had to understand it.
 
 =head1 Decomposing F<data.m4>
 
-Most in the M4 file were macros.  That meant that when you said, "XYZ sends
+Hosts in the M4 file were macros.  That meant that when you said, "XYZ sends
 public mail," F<m4> would eventually say, "XYZ's IP appears as reverse DNS for
-F<outbound-1.example.com>.  Other macros were more complex, like the
+F<outbound-1.example.com>."  Other macros were more complex, like the
 C<REDIRECTING_VIRTUAL_DOMAIN> macro, which set up quite a few records of both
 forward and reverse DNS lookup.  All these macros would be passed the host
 macro, which stood in for a number of identifying attributes of the host.
@@ -103,8 +103,8 @@ into a bunch of tinydns lines based on the hosts in them."  The only things
 that varied, really, was what it meant to be in a given group.
 
 So, there were two kinds of entities to consider: hosts and groups.  Hosts were
-easy, since they're all pretty much the same.  We stored our host definitions
-in YAML files, like this one:
+easy, since they're all pretty much the same.  We put our host definitions
+into YAML files, like this one:
 
   #!vim yaml
   hostname: a-lb-mx-fastnet
@@ -119,28 +119,25 @@ in YAML files, like this one:
     - com.example.memcached
     - com.example.tor-exit-node
 
-Files like this sit in a directory organized however the sysadmins want.  Ours
-puts all the Solaris zones on a given server in the same file with the server.
-The tool doesn't care.  It just reads in a bunch of YAML and turns it into a
-Host object.  When every host is loaded in, the hosts can be turned into DNS
-data lines with their C<as_data_lines> method:
+Files like this sit in a directory organized however the sysadmins want.  Ours,
+for example, puts each server in one file, along with any Solaris zones running
+on that server.  The tool doesn't care.  It just reads in a bunch of YAML
+documents and turns them into Host objects.  When every host is loaded in, the
+hosts can be turned into DNS data lines with their C<as_data_lines> method:
 
   #!perl
   sub as_data_lines {
   my ($self) = @_;
 
-    my @lines = $self->rec->comment("begin host ". $self->fqdn);
+    return (
+      $self->rec->comment("begin host ". $self->fqdn),
+      $self->rec->comment("  families: " . join(q{, }, $self->_family_names),
 
-    push @lines, $self->rec->comment(
-      "  families: " . join(q{, }, $self->_family_names)
+      $self->rec->a_and_ptr({ name => $self->fqdn, node => $self }),
+      $self->rec->a({ name => $_, node => $self }) for $self->aliases,
+
+      $self->rec->comment("end host ". $self->fqdn),
     );
-
-    push @lines, $self->rec->a_and_ptr({ name => $self->fqdn, node => $self });
-    push @lines, $self->rec->a({ name => $_, node => $self }) for $self->aliases;
-
-    push @lines, $self->rec->comment("end host ". $self->fqdn . "\n");
-
-    return @lines;
   }
 
 (C<< $self->rec >> is a record generator, so that we can generate diagnostic

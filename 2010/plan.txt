@@ -15,7 +15,7 @@ x  6 - (gopher day)
 x  7 - Test::Fatal
 x  8 - Getopt::Long::Descriptive
 x  9 - Data::Hive
-  10 - DNS::Oterica
+x 10 - DNS::Oterica
   11 - Games::Nintendo::Mario or fewer
   12 - Data::InputMonster
   13 -
