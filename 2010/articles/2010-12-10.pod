@@ -1,0 +1,252 @@
+Title:   In Lieu of Coal, Naughty Children May Be Given M4 Files
+Package: DNS::Oterica
+
+=head2 EXPERIMENTAL CODE AHEAD
+
+L<Last week|2010-12-03.html>, I wrote about the somewhat experimental
+Throwable::X.  This week, I'll be talking about the much more experimental
+L<DNS::Oterica>.  It's been unchanged for a while, but this article is meant to
+tantalize more than to offer a warrantied product.
+
+=head1 Better Living Through Macros
+
+Like, nearly any other internet business, my company has to manage DNS records.
+For a number of reasons, not the least of which was our heavy reliance on MX
+records and email transports to get work done.  With on the order of 200
+host names (C<A> records) alone to manage, the programmers of old had very
+wisely decided that maintaining thousands of lines of
+L<tinydns|http://cr.yp.to/djbdns.html> configuration was madness.  They very
+wisely decided to automate the generation of these files.  They very wisely
+decided to generate output based on the jobs performed by actual hosts.  Then
+they went and decided to use
+L<M4|http://en.wikipedia.org/wiki/m4_(computer_language)>
+
+F<dns/data.m4> was not a well-loved file, and with good reason.  Here's a brief
+sampling of some of its contents:
+
+  #!vim m4
+  # create tinydns-data "+" or "=" lines
+  define(EQUALS,  `=$1:$2:$3')dnl
+  define(PLUS,    `+$1:$2:$3')dnl
+
+  # set up a macro for the IP and an = line at the same time
+  define(defq,  `define($1, `$2')EQUALS($1)
+  ')dnl
+
+  # macros to get host definition parts out of the defq-defined host
+  define(NAME_FOR, $1)dnl
+  define(IP_FOR,   $2)dnl
+  define(TTL_FOR,  $3)dnl
+
+  # macro for boxes that send mail form us
+  define(SENDS_PUBLIC_MAIL,   PLUS(outbound-1.example.com, $1, ONE_HOUR))dnl
+
+  # set up one of our webservers
+  defq(XYZ,        `xyz.example.com,   10.2.3.34,    3600')dnl
+  defp(XYZ_WWW,    `xyz.www.example.com, 10.2.3.32,    600')dnl
+  defq(XYZ_STATIC, `xyz.static.www.example.com, 10.2.3.34,    600')dnl
+  DEFAULT_SOA_AND_NS( 34.3.2.10.in-addr.arpa )
+  SENDS_PUBLIC_MAIL( IP_FOR( XYZ ) )
+
+This is probably some of the clearest m4 found in the file.  I won't show you
+anything worse, because nobody wants his or her Friday ruined by something like
+this:
+
+  #!vim m4
+  define(DEFAULT_MAIL, `
+  @$1::mx.example.com:10:600
+  pushdef(`__dom', `__macro_'translit($1, -., __))
+  define(__dom`_mx', @$1`::$'`1:10:600')
+  map(__dom`_mx', DEFAULT_MXES)
+  popdef(`__dom')
+  ')
+
+So this file was a relic of days gone by, produced by programmers who had long
+since moved on to other ventures.  Everybody shop this kind of system: it
+works, its custodians can make very basic adjustments to it, but nobody dares
+make significant changes.  Unfortunately, these kind of systems usually get
+built very early in a product's lifecycle, to solve very important problems
+that are not within the business's central competency.  That is: we were not a
+company that existed to manage DNS records, but we needed to have something to
+manage them as soon as possible.
+
+The problem is that eventually the business will grow past this kind of
+solution, and if it can't be maintained, it will have to be rewritten.  There
+may be plenty of ways to make that take longer and to keep these systems more
+maintainable, but their eventual retirement and replacement, over and over,
+seems inevitable.
+
+The time for our system to die was at hand, and before we could replace it, we
+had to understand it.
+
+=head1 Decomposing F<data.m4>
+
+Most in the M4 file were macros.  That meant that when you said, "XYZ sends
+public mail," F<m4> would eventually say, "XYZ's IP appears as reverse DNS for
+F<outbound-1.example.com>.  Other macros were more complex, like the
+C<REDIRECTING_VIRTUAL_DOMAIN> macro, which set up quite a few records of both
+forward and reverse DNS lookup.  All these macros would be passed the host
+macro, which stood in for a number of identifying attributes of the host.
+
+In fact, once you got past a lot of the weird M4-ness of the file, it was
+trying to say some pretty simple things, like this:
+
+=for :list
+* All hosts have a primary name.
+* Hosts might have IP addresses for their name.
+* Hosts might have extra names that go to the same address.
+* Hosts might belong to service groups, like MX or webservers.
+
+Then there was a second layer of logic that said "a host turns into a bunch of
+tinydns lines based on its names and IP addresses" and "service groups turn
+into a bunch of tinydns lines based on the hosts in them."  The only things
+that varied, really, was what it meant to be in a given group.
+
+So, there were two kinds of entities to consider: hosts and groups.  Hosts were
+easy, since they're all pretty much the same.  We stored our host definitions
+in YAML files, like this one:
+
+  #!vim yaml
+  hostname: a-lb-mx-fastnet
+  domain: example.com
+  location: megacenter
+  ip:
+    world: 10.1.0.100
+  aliases:
+    - almf.example.com
+  families:
+    - com.example.mx
+    - com.example.memcached
+    - com.example.tor-exit-node
+
+Files like this sit in a directory organized however the sysadmins want.  Ours
+puts all the Solaris zones on a given server in the same file with the server.
+The tool doesn't care.  It just reads in a bunch of YAML and turns it into a
+Host object.  When every host is loaded in, the hosts can be turned into DNS
+data lines with their C<as_data_lines> method:
+
+  #!perl
+  sub as_data_lines {
+  my ($self) = @_;
+
+    my @lines = $self->rec->comment("begin host ". $self->fqdn);
+
+    push @lines, $self->rec->comment(
+      "  families: " . join(q{, }, $self->_family_names)
+    );
+
+    push @lines, $self->rec->a_and_ptr({ name => $self->fqdn, node => $self });
+    push @lines, $self->rec->a({ name => $_, node => $self }) for $self->aliases;
+
+    push @lines, $self->rec->comment("end host ". $self->fqdn . "\n");
+
+    return @lines;
+  }
+
+(C<< $self->rec >> is a record generator, so that we can generate diagnostic
+output rather than tinydns-config, as needed.)
+
+This is pretty straightforward.  Sure it's I<longer> than the corresponding M4
+found in our C<defq> macro, but it's a heck of a lot clearer.  That said, it's
+also pretty boring.  This code might solve a problem, but it doesn't solve the
+more interesting, difficult problem we have:  composing the behavior found in
+each service group -- here, called I<families>.
+
+In our YAML document above, we put the host into several families, one of which
+was F<com.example.mx>, which we implement in a class seen below.  We'll go
+through it in chunks:
+
+  #!perl
+  package DNS::Oterica::NodeFamily::ExampleMX;
+  use Moose;
+  extends 'DNS::Oterica::NodeFamily';
+
+  sub name { 'com.example.mx' }
+
+It's just a Moose class, implementing the abstract NodeFamily class.  (There
+ended up being boring reasons that NodeFamily couldn't be a role.)  The C<name>
+corresponds to the family name used in the config files.
+
+  #!perl
+  has mx_nodes => (
+    is  => 'ro',
+    isa => 'HashRef',
+    default => sub { {} },
+  );
+    
+  after add_node => sub {
+    my ($self, $node) = @_;
+    my $nodes = $self->mx_nodes;
+    my $i = keys %$nodes;
+          
+    my $next_name = sprintf 'mx-%s.example.com', $i+1;
+      
+    $self->mx_nodes->{ $next_name } = $node;
+  };
+
+The family keeps track of all the MX nodes that it's seen; there's an
+C<mx_nodes> attribute on the object, and every time it adds a node, it records
+the node and gives it a new name.  The first is F<mx-1.example.com>, the
+F<mx-2.example.com> and so on.
+    
+  #!perl
+  augment as_data_lines => sub {
+    my ($self) = @_;
+    my @lines; 
+            
+    my $mx = $self->mx_nodes;
+    for my $mxname (sort keys %$mx) {
+      push @lines, $self->rec->a({
+        name => $mxname,
+        node => $mx{$mxname},
+      });
+    }
+    return @lines;
+  };
+
+Then, when we're ready to turn the family into configuration we... wait,
+I<what??>  What's I<augment>?  Rather than a length explanation, here's a
+snippet of the method definition from the base NodeFamily class:
+
+  #!perl
+  sub as_data_lines {
+    my ($self) = @_;
+
+    my @lines;
+
+    push @lines, $self->rec->comment("begin family " . $self->name);
+    push @lines, $_ for inner();
+    push @lines, $self->rec->comment("end family " . $self->name);
+
+    return @lines;
+  }
+
+We're going to return a list of lines.  We create start and end comments, and
+get the rest by calling C<inner>.  C<inner> is the other end of C<augment>.
+When we call C<inner>, the augment blocks get called in subclasses.  With
+"normal" method calls, we'd end up entering the subclass's method first, and it
+would decide how (and whether) to call the superclass's method.  Here, we're
+working backward, in a sense: first the superclass method is begun, then any
+subclasses may contribute to the output, and then the superclass is finalized.
+
+This avoids any need to worry about calling the superclass method in
+subclasses, which can then write the simplest thing needed.  I<Unfortuantely>,
+you can't call C<augment> in a role.  To get that kind of method composition,
+you may have to wait for a future Advent posting!
+
+=head1 A Triumph of the Moose
+
+In the end, we replaced literally hundreds of thousands of lines of M4 with 42
+very short class definitions -- our node families -- and one file per physical
+server.  The new system can be the target of regression tests, either of
+individual groups or of the whole thing.  Most of the time, the sysadmins can
+just edit simple YAML documents.  Occasionally, node families need updating,
+but they're all very simple Perl classes with only one or two methods of any
+note.
+
+Best of all, nobody needs to learn M4.
+
+=head1 See Also
+
+=for :list
+* L<DNS::Oterica>

@@ -6,15 +6,15 @@
   19 20 21 22 23 24 25  FRIDAY    = Experimental
   26 27 28 29 30 31     SATURDAY  = Silly
 
-   1 - Log::Dispatchouli
-   2 - Sub::Import
-   3 - Throwable::X
-   4 - Acme::ProgressBar
-   5 - Number::Tolerant
-   6 - (gopher day)
-   7 - Test::Fatal
-   8 - Getopt::Long::Descriptive
-   9 - Data::Hive
+x  1 - Log::Dispatchouli
+x  2 - Sub::Import
+x  3 - Throwable::X
+x  4 - Acme::ProgressBar
+x  5 - Number::Tolerant
+x  6 - (gopher day)
+x  7 - Test::Fatal
+x  8 - Getopt::Long::Descriptive
+x  9 - Data::Hive
   10 - DNS::Oterica
   11 - Games::Nintendo::Mario or fewer
   12 - Data::InputMonster
@@ -22,19 +22,19 @@
   14 - Test::BinaryData
   15 - HTML::Widget::Factory
   16 - Role::Subsystem
-  17 - MRO::Magic
+  17 - Global::Context
   18 - Pod::CYOA
   19 - Exception::Reporter
   20 -
   21 - Test::Routine
   22 - DBIx::Locker
   23 - MooseX::ComposedBehavior 
-  24 - Global::Context
+  24 - MRO::Magic
   25 - *
 
 ___[ backups.txt ]___
-Net::Gopher::Server
 Querylet?
+synrtf?
 
 Color::Palette
 String::Errf
