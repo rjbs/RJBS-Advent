@@ -40,8 +40,8 @@ which can interfere with proper job speed detection.
 
 C<Acme::ProgressBar> is I<always> accurate.  No matter what the characteristics
 of the input are, no matter how the loop flow is altered, no matter what,
-Acme::ProgressBar is accurate.  Only system load or fatal signals can interfere
-with its accuracy.
+Acme::ProgressBar is accurate.  Only extreme system load or fatal signals can
+interfere with its accuracy.
 
 It's very easy to use, too.  It isn't a source filter, and uses no complex
 features.  It should never introduce bugs to your code and can be added or
