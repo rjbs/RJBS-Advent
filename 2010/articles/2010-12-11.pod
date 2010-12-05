@@ -1,0 +1,156 @@
+Title:   Putting less on Your Wish List
+Package: fewer
+
+=head1 One of Perl's C<less>er Known Features
+
+I do a lot of work with email, including a lot of message rewriting.  Last
+year, I wrote about L<my favorite message-rewriting
+helper|http://advent.rjbs.manxome.org/2009/2009-12-17.html>, but this year I'll
+write about something somewhat more removed.
+
+Although quite a lot of my mail-handling uses L<Email::MIME> or
+L<Email::Simple>, the most heavily-munged mail goes through the venerable
+L<MIME::Entity>, which has much more sophisticated facilities for things like
+"message body stored on disk."  When you're going to build email messages with
+huge attachments, and then rewrite them, this is pretty important.
+
+Sometimes, though, we know we're going to deal with very small messages, and
+using the disks to store MIME content will just grind on IO.  For example, we
+might have a program that does something like this:
+
+  #!perl
+  my $parser = MIME::Parser->new;
+  
+  for my $file ( File::Find::Rule->file->in('Maildir') ) {
+    ...
+    my $entity = $parser->parse_open( $file );
+
+    MIME::Visitor->rewrite_parts($entity, sub { ... });
+  }
+
+By default, this will produce temporary files in F</tmp> for the message and
+temporary working data.  This is often (perhaps surprisingly) much faster than 
+working in memory, because disk IO is native, while Perl's file-in-memory IO is
+implemented in (relatively) slow Perl.  So, while the default behavior may be
+I<faster>, it's also more I<expensive>, at least as regards disk IO.  If, like
+me, you often find yourself bound by disk operations, you might want a way to
+switch your programs into a mode that will use less disk IO operations, or
+"iops."
+
+This is easy, first we update our program to have the optional code path:
+
+  #!perl
+  my $parser = MIME::Parser->new;
+
+  if ( less->of( 'iops' ) ) {
+    $parser->output_to_core(1);
+    $parser->tmp_to_core(1);
+  }
+  
+  for my $file ( File::Find::Rule->file->in('Maildir') ) {
+    ...
+    my $entity = $parser->parse_open( $file );
+
+    MIME::Visitor->rewrite_parts($entity, sub { ... });
+  }
+
+Now, most of the time that path will not be entered.  The call to C<< less->of
+>> will usually return false.  To make it true, we would need to add a line
+like this to the top of the program:
+
+  #!perl
+  use less 'iops';
+
+We don't want to edit our program every time, though -- but we're not out of
+luck.  Instead, we can invoke it in one of two ways.  The first is the normal
+way, which will produce lots of disk IO:
+
+  $ perl scan-all-mail
+
+If we want less IO, we run:
+
+  $ perl -Mless=iops scan-all-mail
+
+The C<-M> flag to F<perl> basically injects that C<use> line to the top of our
+program, causing the C<< less->of >> call to return true, and all message
+handling to be done in memory.
+
+=head2 Disregard that, this is less 'useful'
+
+C<less> has long been regarded as a joke module, which did nothing until perl
+5.10.0.  In that release, it became something of a demonstration of how to
+write a lexical pragma that looks at the "hints hash" found in the 11th (!)
+element returned by C<L<caller|perlfunc/caller>>.  From the outside, it
+actually looked useful, as seen above.
+
+Unfortunately, C<less> is just the sort of pragma where I<dynamic>, rather than
+lexical scope would be useful.  We want to put that parser-optimizing code down
+in some "give me a new MIME parser" library that anything can call, getting a
+usefully-optimized parser based on what the programmer has asked to use less of
+most recently -- not just what he asked to use less of I<in the lexical scope
+calling C<of>>.
+
+With that limitation in place, can you use C<less> for anything useful?
+Possibly, but in the end, less is less useful than less could be if less used
+less lexicality.
+
+=head1 Wait, RJBS didn't write C<less>!
+
+That's true.  I didn't write less, and I don't think I can easily fix it given
+its existing interface.  I did fix another big problem with it, though.
+
+This code snippet looks great:
+
+  #!perl
+  use less 'cpu';
+
+  process_lots_of_files( @filenames );
+
+Or this one:
+
+  #!perl
+  use less 'memory';
+
+  process_lots_of_files( @filenames );
+
+This one, though, is just unbearable:
+
+  #!perl
+  use less 'filehandles';
+
+  process_lots_of_files( @filenames );
+
+It's not that I mind the idea of trying to minimize open filehandles.  That can
+be a reasonable optimization, sometimes.  The problem is that filehandles are
+countable things, and you don't use "less" with countable objects.  The word
+"less" is for things that cannot be counted.  For example:
+
+=for html <blockquote>
+
+This advent calendar entry has less merit than many others.
+
+=for html </blockquote>
+
+...but...
+
+=for html <blockquote>
+
+Rik deserves fewer words of praise today than he did yesterday.
+
+=for html </blockquote>
+
+If you are running perl 5.12.0 or newer, you can fix the nasty English
+suggested by the previous code snipped by installing L<fewer> and writing:
+
+  #!perl
+  use fewer 'filehandles';
+
+  process_lots_of_files( @filenames );
+
+I hope this is of use.
+
+=head1 See Also
+
+=for :list
+* L<less>
+* L<fewer>
