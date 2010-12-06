@@ -127,7 +127,7 @@ countable things, and you don't use "less" with countable objects.  The word
 
 =for html <blockquote>
 
-This advent calendar entry has less merit than many others.
+This advent calendar entry has I<less merit> than many others.
 
 =for html </blockquote>
 
@@ -135,7 +135,7 @@ This advent calendar entry has less merit than many others.
 
 =for html <blockquote>
 
-Rik deserves fewer words of praise today than he did yesterday.
+Rik deserves I<fewer words> of praise today than he did yesterday.
 
 =for html </blockquote>
 
