@@ -1,0 +1,378 @@
+Title:   All Marked Up with No Place to Go
+Package: synrtf
+
+=head2 NOT ON THE CPAN
+
+Today's article is about code not found on the CPAN.
+
+=head1 Talk, talk, talk!
+
+For the past few years, I've given L<quite a few technical
+talks|http://rjbs.manxome.org/talks/> at YAPC, OSCON, and other conferences.  I
+really enjoy doing this, and I like to think I've gotten fairly good at
+producing good slides to illustrate the things I'm discussing.  Since the
+initial release of Apple Keynote, I've been using it for nearly all of my slide
+construction, and I like it quite a bit, but every once in a while I run into
+one of its shortcomings.
+
+Although Keynote can be scripted with AppleScript, I've found that its
+scripting facilities are pretty weak, and they've never been sufficient to let
+me do what I want.  Sometimes, this means I skip doing something, and sometimes
+it means I find a very convoluted way to achieve my goals using only Keynote's
+stock features.
+
+One of the things that's left me most frustrated, though, is my inability to
+automatically syntax highlight source code on slides.  When you're displaying
+fifteen lines of code on a big screen to people sitting in an amphiteater,
+syntax highlighting can be a huge help for readability.  Just compare this
+plain code:
+
+  #!vim none
+  package Counter;
+  use MooseX::POE;
+  has count => (
+    is => 'rw',
+    default => sub { 0 },
+  );
+
+  sub START {
+    my ($self) = @_;
+    $self->yield('increment');
+  }
+
+  event increment => sub {
+    my ($self) = @_;
+    print "Count is now " . $self->count . "\n";
+    $self->count( $self->count + 1 );
+    $self->yield('increment') unless $self->count > 3;
+  };
+
+...to this syntax highlighted code:
+
+  #!vim perl
+  package Counter;
+  use MooseX::POE;
+  has count => (
+    is => 'rw',
+    default => sub { 0 },
+  );
+
+  sub START {
+    my ($self) = @_;
+    $self->yield('increment');
+  }
+
+  event increment => sub {
+    my ($self) = @_;
+    print "Count is now " . $self->count . "\n";
+    $self->count( $self->count + 1 );
+    $self->yield('increment') unless $self->count > 3;
+  };
+
+Adding syntax highlighting seemed like it would be a huge win, and would be
+useful to quite a few people, so I decided to undertake the endeavor.  I knew
+that like many OS X apps (at the time, at least), Keynote was using RTF to
+store the rich text of slides.  If I could produce RTF syntax highlighted code,
+I could get it into Keynote and be done!
+
+=head1 Making Stew from the CPAN
+
+In the end, making the RTF -- which I'd assumed would be the most difficult
+part of the job -- was pretty simple.  The thing that made it simple, as with
+so many things in Perl, was the CPAN.  All I needed to do was find the right
+set of modules and figure out how to tie them together.  What follows is a
+run-through of the code-to-RTF program I produced.
+
+First, we load the libraries we'll need:
+
+  #!perl
+  use strict;
+  use warnings;
+
+  use Getopt::Long::Descriptive;
+  use Graphics::ColorUtils qw(name2rgb);
+  use RTF::Writer;
+  use Text::VimColor;
+
+Everybody remember
+L<Getopt::Long::Descriptive|http://advent.rjbs.manxome.org/2010/2010-12-08.html>?
+Good.  We're going to use that to get some very basic options:
+
+  #!perl
+  my ($opt, $usage) = describe_options(
+    '%c %o <filename>',
+    [ 'help|h',          'display this message' ],
+    [ 'filetype|ft|f=s', 'filetype; Vim guesses by default' ],
+    [ 'font-face|F=s',   'font face to use; defaults to Courier New',
+                         { default => 'Courier New' } ],
+    [ 'font-size|Z=i',   'font size to use, in points; defaults to 14',
+                         { default => 14 } ],
+  );
+
+  $usage->die if $opt->{help} or @ARGV != 1;
+
+The C<--filetype> option is important, because it tells us what kind of syntax
+to highlight.  After all, I have been known to include non-Perl code in my
+slides, once in a while.
+
+  #!perl
+  my $syn = Text::VimColor->new(
+    file => $ARGV[0],
+    ($opt->{filetype} ? (filetype => $opt->{filetype}) : ()),
+  );
+
+Here, we use one of my favorite modules.  I only use it very occasionally, but
+it always saves quite a lot of time.  While there are a number of syntax
+highlighting libraries on the CPAN, they often strike me as experimental or
+awkward to use.  L<Vim|http://vim.org/>, on the other hand, does a pretty good
+job with many different languages, and L<Text::VimColor> lets us get exactly
+the coloring that Vim would have used.  Even better, we'll be able to get at
+the syntax highlighted document as a list of substrings of the document, each
+with a syntax type, something like this:
+
+  $VAR1 = [
+    [ Statement  => 'my'      ],
+    [ ''         => ' '       ],
+    [ Identifier => '$syntax' ],
+    [ ''         => ' = '     ],
+    ...
+  ];
+
+With our input primed in C<$syn>, it's time to prime our output mechanism with
+L<RTF::Writer>:
+
+  #!perl
+  my $rtf = RTF::Writer->new_to_string( \my $str );
+
+  local $RTF::Writer::Escape[ ord('-') ] = '-';
+
+  local $RTF::Writer::AUTO_NL = 0;
+
+We've initialized our RTF::Writer so that as it writes out text, it puts it in
+an in-memory buffer.  We're not going to be doing anything gargantuan, and
+thinking about temporary files is always a drag.  Then we have to futz around
+with some settings to tweak out output.  We prevent the replacement of hyphens
+with "non-breaking hypens" because Apple's RTF implementation doesn't seem to
+understand them, and we preserve the location of newlines so that we can skim
+our output RTF by eye to look for problems.
+
+  #!perl
+  $rtf->prolog(
+    fonts  => [ $opt->{font_face} ],
+    colors => [ all_colors() ],
+  );
+
+  my $hp_size = $opt->{font_size} * 2; # RTF uses half-points for font size
+
+  # Set size, font, and background color.
+  $rtf->print(
+    \"\\fs$hp_size\\f0",
+    color_controls_for('Normal')
+  );
+
+Now we've set up the RTF prolog, which tells future readers in advance what
+fonts and colors will be used in the document.  We scale up to RTF's weird
+"half point" font sizing, and get into our starting format by setting up our
+font size and colors by printing some raw RTF commands.  C<\fs> sets font size,
+C<\f> sets font, and C<\c> sets the color.  Where do C<all_colors> and
+C<color_controls_for> come from?  We'll get back to those in a bit.
+
+At this point, we've loaded in a stream of syntax-marked text hunks and we've
+got an RTF output stream ready to go.  All we have to do is read, transform,
+and print -- the Platonic Perl Program:
+ 
+  #!perl
+  my $tokens = $syn->marked;
+
+  while (my $pair = shift @$tokens) {
+    my ($type, $text) = @$pair;
+
+    $rtf->print(
+      color_controls_for($type), " ",
+      $text,
+    );
+  }
+
+That's it!  C<@$tokens> is our input, each entry a pair of "type" and "text"
+values.  For each one, we spit out a color command, terminated by a space, and
+then the text.  We don't need to worry about anything else, because we've
+picked a monospace font and RTF won't try to mangle our whitespace.  (Thanks,
+RTF!)  We can just finalize the RTF document and print out the buffer to which
+it was written:
+
+  #!perl
+  $rtf->close;
+
+  print $str;
+
+So, that's the whole program -- save for color handling -- in about 45
+significant lines.
+
+It turns out that almost all of the work was in reading the Vim color scheme
+file!
+
+  #!perl
+  my %color_pos;
+  my @colors;
+  BEGIN {
+    my %color = groups_from_file("$ENV{HOME}/.vim/colors/manxome.vim");
+
+    $color{Normal} ||= {};
+    $color{Normal}{bg} ||= [   0,   0,   0 ];
+    $color{Normal}{fg} ||= [ 127, 127, 127 ];
+
+    for my $group (keys %color) {
+      for my $which (qw(fg bg)) {
+        next unless my $rgb = $color{ $group }{ $which };
+
+        my $pos = $color_pos{ join('-', @$rgb) };
+
+        unless (defined $pos) {
+          push @colors, $rgb;
+          $pos = $color_pos{ join('-', @$rgb) } = $#colors;
+        }
+
+        $color_pos{ "$group:$which" } = $pos;
+      }
+    }
+  }
+
+We read in the syntax highlighting groups from a given file -- here, my
+personal Vim color scheme -- and save everything as two entries in a hash.
+The keys are names like F<Identifier:fg> and F<Identifier:bg>, and the values
+are numbers -- because in RTF, we always refer to colors by their
+position in the index of colors, like this:
+
+  #!vim rtf
+  \line \cf0 \cb3 This text is color 0 on color 3! \line
+
+So this code has to set up the index and make sure all the possible names refer
+back to index positions.  The color index looks like this:
+
+  #!vim rtf
+  {\colortbl \red0\green170\blue0;\red0\green0\blue0;\red170\green170\blue170;\red255\green255\blue0;\red255\green0\blue0;\red0\green170\blue170;\red255\green255\blue255;\red0\green0\blue255;\red170\green0\blue0;\red0\green255\blue0;\red255\green0\blue255;\red0\green255\blue255;\red0\green0\blue238;\red204\green204\blue204;}
+
+...so we need to get all our colors into RGB values, but in Vim color schemes,
+we're free to use named colors, like "SlateBlue."  We'll resolve these with 
+L<Graphics::ColorUtils>, a weird little module that turns out to be really
+handy once in a while.  
+
+  sub groups_from_file {
+    my ($filename) = @_;
+
+    open my $fh, '<', $filename or die "couldn't open $filename to read: $!";
+
+    my %color;
+
+    LINE: while (my $line = <$fh>) {
+      chomp $line;
+      $line =~ s/\A\s+//;
+      next LINE unless $line =~ /\Ahi(?:ghlight)?/;
+
+      my ($group) = $line =~ /\Ahi(?:ghlight)?\s+(\w+)/;
+
+      my %attr;
+
+      if (my ($fg) = $line =~ /guifg=(\S+)/) {
+        $attr{fg} = color_to_rgb($1);
+      }
+
+      if (my ($bg) = $line =~ /guibg=(\S+)/) {
+        $attr{bg} = color_to_rgb($bg);
+      }
+
+      $color{ $group } = \%attr;
+    }
+
+    return %color;
+  }
+
+  sub color_to_rgb {
+    my ($str) = @_;
+
+    if ($str =~ /#([0-9a-f]{6})/i) {
+      return [ map { hex } unpack "(a2)*", $1 ]
+    } else {
+      my @rgb = name2rgb($str);  # <-- from Graphics::ColorUtils
+      return unless @rgb;
+      return \@rgb;
+    }
+  }
+
+Also note that for some bizarre reason I chose to use C<unpack>, above.  It's
+actually the only form of unpack that I know how to use.
+
+I<Finally>, we get to the heart of the matter:
+
+  sub all_colors { @colors }
+
+  sub color_controls_for {
+    my ($group) = @_;
+
+    my $ctrl = '';
+    for (qw(f b)) {
+      $ctrl .= "\\c$_"
+            .  (defined $color_pos{"$group:${_}g"}
+               ? $color_pos{"$group:${_}g"}
+               : $color_pos{"Normal:${_}g"});
+    }
+
+    return \$ctrl;
+  }
+
+C<all_colors> returns a list of RGB arrayrefs to be used as the color index,
+and C<color_controls_for> returns an RTF command sequence to switch to the
+color for the given group.
+
+=head1 The Proof of the Stew is in the Eating
+
+I got this code written pretty quickly, and felt pretty good about it.  It
+didn't do anything clever or tricky, it just tied together a few simple CPAN
+modules to perform a simple text transformation, and it I<worked>!  Those are
+the qualities I like to end up with in my code: simple, straightforward, mostly
+implemented in terms of other libraries, and I<working>.  You can look at
+L<some sample output|http://advent.rjbs.manxome.org/2010/synrtf.rtf>, if you
+want, too.
+
+From here, things should have been simple.  I'd write some AppleScript like
+this (forgive my pseudo-AppleScript):
+
+  #!vim applescript
+  tell application Keynote
+    get body of current slide
+    write body to file with path P
+    execute shell command "synrtf P > P.rtf"
+    set rtf to (read file with path (P + ".rtf"))
+    set body of current slide to rtf
+  end tell
+
+Well, it turns out that you can't address the formatting of slides in Keynote,
+at all.  You also can't address anything on the slide that isn't the main body
+-- and the main body has several behaviors that differ from other shapes with
+text.  I could've resorted to GUI-level automation to do things like:
+
+=for :list
+1. assume that the current text object is the target
+2. simulate Cmd-A, Cmd-C to select all text and copy it
+3. run C<synrtf> using C<pbclip> to get pasteboard contents
+4. get C<synrtf> output and put it on the pasteboard
+5. simulate pressing Cmd-V to paste the formatted text
+
+It was pretty clear by this point, though, that all the work lay ahead of me
+would be boring drudgery, and that I could just quit now and feel good about
+the RTF bits, maybe to revisit them later, when Keynote's automation improved.
+
+I'm sorry to report that now, three years later, the automation hasn't gotten
+any better, I<and> it no longer uses RTF.  I don't see myself switching away
+from Keynote, despite that, but maybe C<synrtf>, or some of the code it shows
+off, will be useful to someone else the way I'd hoped the original project
+would be.
+
+=head1 See Also
+
+=for :list
+* L<synrtf|https://github.com/rjbs/misc/blob/master/synrtf>
+* L<sample output of C<synrtf>|http://advent.rjbs.manxome.org/2010/synrtf.rtf>
+* L<Vim::TextColor>
+* L<RTF::Writer>
+* L<The RTF Pocket Guide|http://www.oreilly.com/catalog/rtfpg>

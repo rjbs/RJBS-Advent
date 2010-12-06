@@ -16,9 +16,9 @@ x  7 - Test::Fatal
 x  8 - Getopt::Long::Descriptive
 x  9 - Data::Hive
 x 10 - DNS::Oterica
-  11 - Games::Nintendo::Mario or fewer
+x 11 - fewer
   12 - Data::InputMonster
-  13 -
+  13 - (synrtf?)
   14 - Test::BinaryData
   15 - HTML::Widget::Factory
   16 - Role::Subsystem
