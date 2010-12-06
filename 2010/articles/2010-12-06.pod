@@ -1,7 +1,7 @@
 Title:  Feast of St. Burl
 Package: Net::Gopher::Server
 
-=head2 NOT ON CPAN
+=head2 NOT ON THE CPAN
 
 Today's article is about code not found on the CPAN.
 
@@ -32,8 +32,8 @@ errors, I'd remember the nice, simple Gopher system.  You'd basically get two
 things from it:  directories and files.  There was nothing to screw up!
 
 Years later, when I had learned how to write non-trivial programs, I decided I
-would write a Gopher server, which meant reading [the Gopher
-spec](http://www.faqs.org/rfcs/rfc1436.html).  It looked sort of weird, but
+would write a Gopher server, which meant reading L<the Gopher
+spec|http://www.faqs.org/rfcs/rfc1436.html>.  It looked sort of weird, but
 easy enough to implement a test server:
 
   #!perl
