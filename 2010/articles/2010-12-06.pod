@@ -162,8 +162,8 @@ be concatenated to the selector before fetching.  "7" is assumed to actually
 return a directory (a "1").
 
 There are even some types for other protocols.  For example, "T" points to an
-interactive tn3270 session.  I must admit to being moved by feelings of
-nostalgia like that -- like finding "troff" as a top-level MIME-type-like
+interactive tn3270 session.  I must admit to being moved to feelings of
+nostalgia by that -- like finding "troff" as a top-level MIME-type-like
 classification for in an early email RFC.  If we added "h" as a type for
 HTTP, we could say:
 
