@@ -1,0 +1,93 @@
+Title:   Wanted: Gift, Got: Gift
+Package: Test::BinaryData
+
+=head1 The Case of the Invisible Differences
+
+I've seen this kind of output from test programs more than I'd like to
+remember:
+
+  #!code
+  not ok 6172 - sent expected message
+  #   Failed test 'sent expected message'
+  #   at t/omnibus.t line 1938.
+  #          got: 'Foo.
+  # '
+  #     expected: 'Foo.
+  # '
+
+You'll stare at that for a long time* before having the clever idea of piping
+the test through C<cat -A> -- only to find that you're only expecting a
+carriage return and newline, but you're getting a newline.  After the hundredth
+time, you learn to bring C<cat -A> into play as soon as you see this kind of
+weird test result, and lesson helps.  The problem is that it I<doesn't> help
+when diagnosing CPAN Testers reports from your code running on SqueeOS True56,
+a platform that you've never heard of and that nobody knows the line endings
+for.  What's going on with the output?  You can't say, so you contact the
+smoker and ask him to re-run the tests and tell you what the bytes in question
+are, but it's a pretty lousy approach.  The solution is to fix the diagnostic
+messages to show you everything that might be relevant.
+
+L<Test::BinaryData> replaces the usual "have X, want Y" diagnostic with output
+inspired by C<xxd>.  The above test would have produced:
+
+  #!code
+  not ok 6172 - sent expected message
+  #   Failed test at t/omnibus.t line 1938.
+  # have (hex)               have           want (hex)               want        
+  # 466f6f2e0d0a------------ Foo...       ! 466f6f2e0a-------------- Foo..       
+
+It's pretty obvious, here, what happened.  There's an extra byte in the "have,"
+and a quick glance at the compared lines shows that the bogus byte is an
+C<0x0d> before the shared C<0x0a>.
+
+If we've got a bunch of identical content before the difference, we get leading
+content for context:
+
+  #!code
+  # have (hex)               have           want (hex)               want        
+  # 310d0a320d0a330d0a340d0a 1..2..3..4.. = 310d0a320d0a330d0a340d0a 1..2..3..4..
+  # 350d0a360d0a540d0a380d0a 5..6..T..8.. ! 350d0a360d0a370d0a380d0a 5..6..7..8..
+  # 390d0a31300d0a31310d0a31 9..10..11..1 = 390d0a31300d0a31310d0a31 9..10..11..1
+  # 320d0a31330d0a31340d0a31 2..13..14..1 = 320d0a31330d0a31340d0a31 2..13..14..1
+  # 350d0a31360d0a31370d0a31 5..16..17..1 = 350d0a31360d0a31370d0a31 5..16..17..1
+  # 380d0a31390d0a32300d0a32 8..19..20..2 ! 380d0a31390d0a32300a3231 8..19..20.21
+  # 31---------------------- 1            ! ------------------------             
+
+The column between the have and want signs shows you the relationship of the
+two subsequences: either they are equal (=) or they are not (!).
+
+=head1 Comparing Encoded Text
+
+Originally, I wrote this module exclusively for comparing line endings.  It had
+obvious applications for testing the results of encoding text strings, but I
+didn't know much about encoding at the time.  Once I became further mired in
+encoding issues, though, I came back to Test::BinaryData and found it really
+useful.  For example, why did performing the same operation from different
+operating systems fail, with no visible differences?
+
+  #!code
+  # have (hex)               have           want (hex)               want        
+  # 517565656e7372c3bf636865 Queensr..che ! 517565656e737279cc886368 Queensry..ch
+  # ------------------------              ! 65---------------------- e          
+
+Both encode the name of Queensryche, complete with L<heavy metal
+umlaut|http://en.wikipedia.org/wiki/Heavy metal umlaut>, but the byte sequences
+differ.  The first is LATIN SMALL LETTER Y WITH DIAERESIS, but the second is a
+combining sequence: LATIN SMALL LETTER Y, followed by COMBINING DIAERESIS.
+
+These forms are identical when read, but of course computers will see them
+differently, and this can cause really bizarre, awful bugs.  As a side
+note, this kind of bug led me to find L<Unicode::Normalize>, which is something
+any programmer dealing with "funny characters" should know about.
+
+Test::BinaryData is meant to compare byte strings, and will reject any
+comparison when either side of it contains "wide characters" -- a sign that the
+content is probably a non-encoded character string.  And anyway, cramming a
+four-character "byte" into the diagnostic display wouldn't work!
+
+=head1 See Also
+
+=for :list
+* L<Test::BinaryData>
+* L<perlunitut> and L<Unicode::Normalize> - for learning to do Unicode right
+* L<Test::Differences> and L<Test::Diff> - more "like C<is> but better" asserts

@@ -17,9 +17,9 @@ x  8 - Getopt::Long::Descriptive
 x  9 - Data::Hive
 x 10 - DNS::Oterica
 x 11 - fewer
-  12 - App::Addex
+x 12 - App::Addex
 x 13 - (synrtf?)
-  14 - Test::BinaryData
+x 14 - Test::BinaryData
   15 - HTML::Widget::Factory
   16 - Role::Subsystem
   17 - Global::Context
