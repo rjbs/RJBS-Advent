@@ -1,0 +1,241 @@
+Title:   One People, One Address Book
+Package: App::Addex
+
+=head1 Centralizing Your Config
+
+I used to be really lousy at keeping track of people's info.  I had a text file
+with a bunch of people's email addresses, and sometimes phone numbers.  Other
+addresses were in my F<mutt> alias file, and others I'd find by searching my
+Maildir as needed.  Phone numbers were either in memory, on paper, or in my
+cell phone's memory.  Any time I looked at fixing this, I was frustrated by
+lousy tools and lousy tool integration.  If I wanted to put everything into
+Thunderbird, I could, but then... well, I'd be stuck using Thunderbird.
+
+When I started using Mac OS X heavily, I started using the Apple Address Book
+pretty heavily, too.  My cell phone supported iSync, so I could get I<all> my
+phone numbers onto my cell effortlessly, which was fantastic.  I started to
+load in everything else, and found it to be a totally reasonable program for
+managing my addresses.  If I had been using Apple's Mail program, it would have
+also provided lots of configuration for free, like whitelisting and address
+autocompletion.  There was just one problem:  I absolutely could not tolerate
+Apple's Mail.
+
+I wanted to keep using F<mutt>, and Spam Assassin, and other disparate tools,
+all with configuration drawn from my address book.  The solution was F<addex>.
+
+Addex talks to an address book -- any kind for which you care to provide an
+adapter -- and has plugins that do stuff with your address book entries.  For
+example, my C<addex.ini> config file looks something liket his:
+
+  #!vim dosini
+  addressbook = App::Addex::AddressBook::Apple
+  output = App::Addex::Output::Mutt
+  output = App::Addex::Output::SpamAssassin
+  output = AddexYAML
+
+  [App::Addex::Output::Mutt]
+  filename = mutt/alias-abook
+
+  [AddexYAML]
+  filename = abook.yaml
+
+  [App::Addex::Output::SpamAssassin]
+  filename = spamassassin/whitelists-abook
+
+The program will acquire address book entries from
+App::Addex::AddressBook::Apple and then use a bunch of different output plugins
+to produce things like F<mutt> configuration, Spam Assassin whitelists, and
+some random YAML file that one of my personal mail filters uses.  Addex ships
+with a number of these output plugins, but it's easy to write your own.  That
+AddexYAML plugin, for example, helps my L<Email::Filter> program decide how to
+file mail.  There's a block in it that looks like this:
+
+  #!perl
+  my ($email_address) = Email::Address->parse($this->from);
+  if ($email_address and my $from_addr = lc $email_address->address) {
+    my ($addex_dest) = YAML::Syck::LoadFile("$ENV{HOME}/.brita/abook.yaml");
+    $addex_dest->{ lc $_ } = delete $addex_dest->{ $_ } for keys %$addex_dest;
+    if (my $folder = $addex_dest->{ $from_addr }) {
+      $dest .= ".$folder/";
+      _log "Delivering to: $dest";
+      $this->accept($dest);
+    }
+  }
+
+If there's a delivery destination for a given sender, the mail goes there
+instead of into my default folder.  The F<abook.yaml> file gets produced by
+this really simple plugin that took five minutes to write:
+
+  #!perl
+  package AddexYAML;
+  use base qw(App::Addex::Output::ToFile);
+  use YAML::Syck ();
+
+  sub process_entry {
+    my ($self, $addex, $entry) = @_;
+
+    my $s = $self->{_struct} ||= {};
+
+    return unless my $folder = $entry->field('folder');
+
+    $folder =~ tr{/}{.};
+
+    my @emails = grep { $_->sends } $entry->emails;
+
+    for my $email (@emails) {
+      if ($s->{ $email } and $s->{ $email } ne $folder) {
+        warn "conflict on email <$email>: '$s->{ $email }' vs. '$folder'\n";
+      }
+      $s->{ $email } = $folder;
+    }
+  }
+
+  sub finalize {
+    my ($self) = @_;
+    $self->output(YAML::Syck::Dump($self->{_struct}));
+
+    $self->SUPER::finalize;
+  }
+
+The C<process_entry> method is called for every address book entry, and builds
+up a map of email addresses to folder names.  When it's processed every entry,
+it spits out a YAML dump of the mapping.  It extends
+App::Addex::Output::ToFile, which takes care of the boring parts of file
+construction.
+
+So, what are address book entry objects, and where do they come from?
+
+=head1 Entries and Address Books
+
+Entries are simple.  Every entry represents a person or contact.  It has a
+name, one or more email addresses, and a hash of other miscellaneous fields.
+Every email address has a label, for things like "home" or "work" email
+addresses.  The fields are just key/value pairs, and get used by things like
+the YAML plugin above, to provide arbitrary extra information.  The "folder"
+field might say to which folder mail should be delivered.  There's another
+field used to pick the default email address for an entry (instead of the
+default of "home.")
+
+The entries come from address book plugins, which really only need to provide
+one method: C<entries>, which must return a list of entries.  My original
+target was Apple's Address Book, of course, which I talked to with Chris
+Nandor's spectacular L<Mac::Glue> library.  Things like an entry's name and
+email addresses are pretty unambiguous, there, but what about the "fields" for
+things like "folder"?
+
+We just read the free text "notes" field on the contact, looking for lines like
+this:
+
+  folder: family
+  whitelist: no
+
+I showed addex to a friend, years ago, and he said, "Wow, that's great, how can
+I use it on Linux?"  It hadn't occurred to me, but it was easy to write a
+plugin to let addex work with L<abook|http://abook.sourceforge.net/>, mapping
+user-defined fields to addex fields.
+
+=head1 Surviving the Death of Mac::Glue
+
+I really wanted to post about Addex in this calendar, but it didn't seem fair.
+Addex hasn't worked very well on modern OS X because Mac::Glue, the Carbon-Perl
+bridge used to access Address Book won't build in most situations.  Ever since
+upgrading to Snow Leopard, I haven't been able to update my mutt config, which
+has been a growing annoyance.
+
+Finally, I decided that I'd work around the lack of Mac::Glue so that I could
+write this post, and I'm glad I did.  The solution is simultaneously cute and
+absolutely horrible.  I won't include it all here, but you can read L<the whole
+source|https://github.com/rjbs/app-addex-addressbook-applescript/blob/master/lib/App/Addex/AddressBook/AppleScript.pm>
+on GitHub.
+
+I'll just include the most horrible part:
+
+  #!perl
+  sub _produce_applescript {
+    my @fields = (
+      'first name',
+      'middle name',
+      'last name',
+      'nickname',
+      'suffix',
+      'note',
+    );
+
+    my $dumper = '';
+    for my $field (@fields) {
+      $dumper .= <<"END_FIELD_DUMPER";
+        set _this to get $field of _person
+        if $field of _person is not missing value then
+          set _answer to _answer & "- BEGIN $field\n"
+          set _answer to _answer & ($field of _person) & "\n"
+          set _answer to _answer & "- END $field\n"
+        end if
+  END_FIELD_DUMPER
+    }
+
+    my $osascript = <<'END_APPLESCRIPT';
+    tell application "Address Book"
+      set _people to (get people)
+
+      set _answer to ""
+
+      repeat with _person in _people
+        repeat 1 times
+          if count of email of _person = 0 then
+            exit repeat
+          end if
+
+          set _answer to _answer & "--- BEGIN " & id of _person & "\n"
+
+          $dumper
+
+          set _answer to _answer & "- BEGIN email\n"
+          repeat with _email in (get email of _person)
+            set _answer to _answer & (label of _email) & "\n"
+            set _answer to _answer & (value of _email) & "\n"
+          end repeat
+          set _answer to _answer & "- END email\n"
+
+          set _answer to _answer & "--- END " & id of _person & "\n\n"
+        end repeat
+      end repeat
+
+      _answer
+    end tell
+  END_APPLESCRIPT
+
+    $osascript =~ s/\$dumper/$dumper/;
+
+    return $osascript;
+  }
+
+With no direct access to the scripting interface from Perl, we're reduced to
+writing AppleScript and later running it with the F<osascript> program.
+AppleScript doesn't have a useful facility for F<stdout>, so we just build up a
+big string with concatenation.  F<osascript> will print out the value of the
+last evaluated expression, so we evaluate C<_answer> last.
+
+There's no JSON library, and trying to worry about escaping JSON strings would
+be a real pain, so instead I've come up with my own ridiculous output format to
+dump address book entries.  Later, there's code that will parse that back in,
+after reading the output of the AppleScript program.
+
+It's a gross, colossal hack, but because address books are pluggable,
+everything just keeps working the way it did before.
+
+=head1 The Future
+
+I keep meaning to write a GMail address book plugin, and an output plugin to
+update my L<Pobox|http://www.pobox.com/> whitelists.  So far, though, I've just
+been too lazy.  Apart from that, though, I'm pretty happy with things the way
+they are.  It just works, and it means I can keep using mutt and Apple Address
+Book and pretend that they know how to interoperate.
+
+=head1 See Also
+
+=for :list
+* L<App::Addex> - the app itself
+* L<App::Addex::AddressBook::Apple> - if you still have L<Mac::Glue>!
+* L<App::Addex::AddressBook::AppleScript> - if you don't!
+* L<App::Addex::AddressBook::Abook> - if you use F<abook> (woah)
+* L<App::Addex::Plugin::Hiveminder> - for L<Hiveminder|http://hiveminder.com> integration
