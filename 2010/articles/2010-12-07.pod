@@ -25,7 +25,7 @@ I I<do> like testing my code.  Testing case 1, from above, is easy!
   is( $gift->contents, $input );
 
 That's nice and simple and straightforward!  There's no code there that doesn't
-contribute to the veyr thing we're testing.  What about testing case 2, though
+contribute to the very thing we're testing.  What about testing case 2, though
 
   #!perl
   use Gift::Wrapper qw(wrap);
@@ -39,7 +39,7 @@ contribute to the veyr thing we're testing.  What about testing case 2, though
 
 That "eval and check result and capture C<$@>" is going to get pretty tedious,
 pretty quickly.  Also, if our tests are part of some larger test program --
-which they probably are -- then we're missint a bunch of extra safety.  That's
+which they probably are -- then we're missing a bunch of extra safety.  That's
 why we'd I<never> use C<eval>, right?  We all use L<Try::Tiny> instead!  With
 that, our code would look like this:
 
