@@ -85,7 +85,7 @@ run-through of the code-to-RTF program I produced.
 
 First, we load the libraries we'll need:
 
-  #!perl
+  #!vim perl
   use strict;
   use warnings;
 
@@ -98,7 +98,7 @@ Everybody remember
 L<Getopt::Long::Descriptive|http://advent.rjbs.manxome.org/2010/2010-12-08.html>?
 Good.  We're going to use that to get some very basic options:
 
-  #!perl
+  #!vim perl
   my ($opt, $usage) = describe_options(
     '%c %o <filename>',
     [ 'help|h',          'display this message' ],
@@ -115,7 +115,7 @@ The C<--filetype> option is important, because it tells us what kind of syntax
 to highlight.  After all, I have been known to include non-Perl code in my
 slides, once in a while.
 
-  #!perl
+  #!vim perl
   my $syn = Text::VimColor->new(
     file => $ARGV[0],
     ($opt->{filetype} ? (filetype => $opt->{filetype}) : ()),
@@ -141,7 +141,7 @@ with a syntax type, something like this:
 With our input primed in C<$syn>, it's time to prime our output mechanism with
 L<RTF::Writer>:
 
-  #!perl
+  #!vim perl
   my $rtf = RTF::Writer->new_to_string( \my $str );
 
   local $RTF::Writer::Escape[ ord('-') ] = '-';
@@ -156,7 +156,7 @@ with "non-breaking hypens" because Apple's RTF implementation doesn't seem to
 understand them, and we preserve the location of newlines so that we can skim
 our output RTF by eye to look for problems.
 
-  #!perl
+  #!vim perl
   $rtf->prolog(
     fonts  => [ $opt->{font_face} ],
     colors => [ all_colors() ],
@@ -181,7 +181,7 @@ At this point, we've loaded in a stream of syntax-marked text hunks and we've
 got an RTF output stream ready to go.  All we have to do is read, transform,
 and print -- the Platonic Perl Program:
  
-  #!perl
+  #!vim perl
   my $tokens = $syn->marked;
 
   while (my $pair = shift @$tokens) {
@@ -200,7 +200,7 @@ picked a monospace font and RTF won't try to mangle our whitespace.  (Thanks,
 RTF!)  We can just finalize the RTF document and print out the buffer to which
 it was written:
 
-  #!perl
+  #!vim perl
   $rtf->close;
 
   print $str;
@@ -211,7 +211,7 @@ significant lines.
 It turns out that almost all of the work was in reading the Vim color scheme
 file!
 
-  #!perl
+  #!vim perl
   my %color_pos;
   my @colors;
   BEGIN {
@@ -250,13 +250,18 @@ So this code has to set up the index and make sure all the possible names refer
 back to index positions.  The color index looks like this:
 
   #!vim rtf
-  {\colortbl \red0\green170\blue0;\red0\green0\blue0;\red170\green170\blue170;\red255\green255\blue0;\red255\green0\blue0;\red0\green170\blue170;\red255\green255\blue255;\red0\green0\blue255;\red170\green0\blue0;\red0\green255\blue0;\red255\green0\blue255;\red0\green255\blue255;\red0\green0\blue238;\red204\green204\blue204;}
+  {\colortbl \red0\green170\blue0;\red0\green0\blue0;\red170\green170\blue170;
+  \red255\green255\blue0;\red255\green0\blue0;\red0\green170\blue170;
+  \red255\green255\blue255;\red0\green0\blue255;\red170\green0\blue0;
+  \red0\green255\blue0;\red255\green0\blue255;\red0\green255\blue255;
+  \red0\green0\blue238;\red204\green204\blue204;}
 
 ...so we need to get all our colors into RGB values, but in Vim color schemes,
 we're free to use named colors, like "SlateBlue."  We'll resolve these with 
 L<Graphics::ColorUtils>, a weird little module that turns out to be really
 handy once in a while.  
 
+  #!vim perl
   sub groups_from_file {
     my ($filename) = @_;
 
@@ -304,6 +309,7 @@ actually the only form of unpack that I know how to use.
 
 I<Finally>, we get to the heart of the matter:
 
+  #!vim perl
   sub all_colors { @colors }
 
   sub color_controls_for {

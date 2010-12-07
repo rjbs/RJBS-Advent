@@ -17,8 +17,8 @@ x  8 - Getopt::Long::Descriptive
 x  9 - Data::Hive
 x 10 - DNS::Oterica
 x 11 - fewer
-  12 - Data::InputMonster
-  13 - (synrtf?)
+  12 - App::Addex
+x 13 - (synrtf?)
   14 - Test::BinaryData
   15 - HTML::Widget::Factory
   16 - Role::Subsystem
@@ -34,7 +34,6 @@ x 11 - fewer
 
 ___[ backups.txt ]___
 Querylet?
-synrtf?
 
 Color::Palette
 String::Errf

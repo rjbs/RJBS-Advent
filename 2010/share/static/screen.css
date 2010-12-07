@@ -103,7 +103,7 @@ pre {
   padding-bottom: 1em;
   background-color: #222;
   color: #fff;
-  font-size: 1em;
+  font-size: 1.1em;
   font-family: monospace;
   width: 100%;
 }
@@ -249,7 +249,7 @@ h2#See-Also {
 .code-listing {
   background-color: #222;
   color: #ddd;
-  font-size: 1em;
+  font-size: 1.1em;
   font-family: monospace;
   white-space: pre;
   border-collapse: collapse;
