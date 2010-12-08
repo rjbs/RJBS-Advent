@@ -70,7 +70,7 @@ operating systems fail, with no visible differences?
   # 517565656e7372c3bf636865 Queensr..che ! 517565656e737279cc886368 Queensry..ch
   # ------------------------              ! 65---------------------- e          
 
-Both encode the name of Queensryche, complete with L<heavy metal
+Both encode the name of Queensrÿche, complete with L<heavy metal
 umlaut|http://en.wikipedia.org/wiki/Heavy metal umlaut>, but the byte sequences
 differ.  The first is LATIN SMALL LETTER Y WITH DIAERESIS, but the second is a
 combining sequence: LATIN SMALL LETTER Y, followed by COMBINING DIAERESIS.
