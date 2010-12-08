@@ -1,0 +1,11 @@
+Title:   In Lieu of Coal, Naughty Children May Be Given M4 Files
+Package: Pod::CYOA
+
+=head1 You are standing outside an undocumented Perl module.
+
+=head1 See Also
+
+=for :list
+* L<Pod::CYOA>
+* L<WWW::AdventCalendar>
+* L<Pod::Simple::HTML>
