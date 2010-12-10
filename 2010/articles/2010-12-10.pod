@@ -19,7 +19,7 @@ L<tinydns|http://cr.yp.to/djbdns.html> configuration was madness.  They very
 wisely decided to automate the generation of these files.  They very wisely
 decided to generate output based on the jobs performed by actual hosts.  Then
 they went and decided to use
-L<M4|http://en.wikipedia.org/wiki/m4_(computer_language)>
+L<M4|http://en.wikipedia.org/wiki/m4_(computer_language)>.
 
 F<dns/data.m4> was not a well-loved file, and with good reason.  Here's a brief
 sampling of some of its contents:
