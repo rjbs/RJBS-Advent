@@ -20,8 +20,8 @@ x 11 - fewer
 x 12 - App::Addex
 x 13 - (synrtf?)
 x 14 - Test::BinaryData
-  15 - HTML::Widget::Factory
-  16 - Role::Subsystem
+x 15 - HTML::Widget::Factory
+x 16 - Role::Subsystem
   17 - Global::Context
   18 - Pod::CYOA
   19 - Exception::Reporter

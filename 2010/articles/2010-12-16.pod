@@ -1,0 +1,235 @@
+Title:   Dealing with an Oversized Interface
+Package: Role::Subsystem
+
+=head1 Too Many Methods
+
+At L<OSCON|http://www.oscon.com/oscon2010> this year, I had the great pleasure
+of presenting a L<tutorial on Moose|http://rjbs.manxome.org/talks/moose/>.
+Afterward, a fellow from a large Perl-based project approached me and said,
+"Moose looks fantastic, but right now our code base is built around a really
+small number of gigantic classes that we need to refactor slowly.  We can't
+just replace the whole system with Moose.  How can we go about doing that?"
+
+The question really pleased me, because it was a question we'd also had to deal
+with, and we'd found a few good answers that really helped us make progress on
+our situation.  For example, two of our important classes have over I<five
+hundred> methods each, and are backed by database tables with way too many
+fields.
+
+Rewriting these classes entirely would be completely insane.  The Big Rewrite
+is sometimes a valid approach, but here it would have been a big time sink,
+since way too much code would I<also> need rewriting to deal with a new
+interface without the same five hundred methods.  We made some first attempts
+with replacement classes that could get the old-interface object as needed, but
+this ended up just meaning that we had I<six> hundred methods.  It wasn't
+targeted enough at cutting down on the amount of crap we'd shoved into one
+place.
+
+=head1 Divide and Delegate
+
+Our next strategy was to identify groups of methods that all addressed a single
+area of concern.  One of the first targets for this kind of refactoring was the
+code that let you subscribe or unsubscribe from a mailing list.  There were a
+few enormous methods and dozens of goofy little ones scattered here and there.
+It provided a weird set of entry points with semantics that varied between
+them.
+
+We wanted to take all that code, give it a small set of entry points with
+simple semantics, and get it the heck I<out> of our existing, overcrowded
+classes.  We made a new SubscriptionManager class and wrote all our new methods
+there.  Then we'd delegate all the old calls to the new subscriptions
+subsystem.  So, for example, our old code that looked like this:
+
+  #!perl
+  my ($member, $error) = $list->subscribe($email_address, { ... });
+
+...could now look like...
+
+  #!perl
+  my $member = try { $list->subs_mgr->subscribe($email_address, { ... }) };
+
+The actual conversion of old calls to new was somewhat tedious.  First, grep
+for the old method names and switch them over.  Next, delete all the old
+methods and see what breaks.  Fix those and repeat.
+
+=head2 The Spoils of Refactoring
+
+Some of the benefits of this refactoring are obvious: we were able to change
+the old code to make more sense; we moved methods into smaller libraries,
+making them easier to understand at a glance; we reduced the size of an
+overly-large interface.  These were all very nice changes, but the second order
+of benefits were great.
+
+For example, because the SubscriptionManager was its own class, it could be
+written with different class-building tools than the big, old class.  Namely,
+it could be Moose.  It had to manage some persistent settings, like
+configuration about each mailing list's subscription policies.  Previously,
+these were all stored in the Big Class's Big Table.  Now that we broke out of
+the big class, we could put them somewhere else.  I've already written about
+L<breaking up big tables|http://advent.rjbs.manxome.org/2010/2010-12-09.html>,
+and that's just what we did.
+
+Now we still had a big complicated class, but it was just a little less
+complicated.  It had delegated a bunch of its work to a smaller class, written
+more cohesively, storing all its data in a little branch of a Data::Hive, but
+what if we wanted to move back to using relational storage in the future?  What
+if we wanted to write a new set of behavior for the subscription manager?
+This had also become trivial!
+
+Look at the second (new) code sample, above, and you'll see a call to a
+C<subs_mgr> method, which obviously returns the subscription manager object.
+What does that method look like?  Something like this:
+
+  #!perl
+  sub subs_mgr {
+    my ($self) = @_;
+
+    my $subs_mgr = MLM::SubscriptionManager->new({ list => $self });
+  }
+
+It doesn't need to, though.  We could instead write it like this:
+
+  #!perl
+  sub subs_mgr {
+    my ($self) = @_;
+
+    my $subs_mgr_class = $self->subs_mgr_class;
+
+    Class::Load::load_class( $subs_mgr_class );
+
+    confess "$subs_mgr_class isn't a valid subscription manager"
+      unless $subs_mgr_class->DOES( 'MLM::Role::SubscriptionManager' );
+
+    my $subs_mgr = $subs_mgr_class->new({ list => $self });
+  }
+
+What's the big difference?  Well, now different lists can have different return
+values from C<subs_mgr_class>, so they can have radically different behavior --
+but they still have to promise to implement the right
+L<role|Moose::Manual::Roles>.  We I<started> with this built in, and it made
+the refactoring much easier.
+
+Our first implementation of the subscription subsystem could just keep using
+the old table for its storage, and then as lists were upgraded to the
+subscription backend, they were switched to use a class with settings stored in
+the hive.
+
+=head1 Making Success Repeatable
+
+This kind of refactoring was so successful, with so many side benefits, that we
+worked to make it easy to perform over and over, by factoring out this
+"subsystem pattern" into a reusable library:  L<Role::Subsystem>.
+
+The you use it is simple.  First, you include Role::Subsystem in the class you
+want to be a subsystem, like our subscription manager; then you tell the main
+class how to get a subsystem object.  Our subscription manager class might look
+like this:
+
+  #!perl
+  package MLM::SubscriptionManager;
+  use Moose;
+
+  with('MLM::Role::SubscriptionManager');
+
+  sub get_subscriber_policy { ... }
+
+Okay, so that's not very interesting -- as I said above, we put the actual
+subsystem stuff in a role:
+
+  #!perl
+  package MLM::Role::SubscriptionManager;
+  use Moose::Role;
+
+  with 'Role::Subsystem' => {
+    ident => __PACKAGE__,
+    type  => 'MLM::List',
+    what  => 'list',
+    getter => sub { MLM::List->retrieve($_[0]) },
+  };
+
+  requires 'get_subscriber_policy';
+
+  has subscription_policy => (
+    ...,
+    init_arg => undef,
+    builder  => 'get_subscriber_policy',
+  );
+
+  sub subscribe {
+    my ($self, $email_address) = @_;
+
+    if ( $self->list->is_disabled ) { ... }
+
+    if ( $self->subscription_policy eq 'open' ) { ... }
+  }
+
+For the most part, this is pretty stock Moose code.  We have some attributes
+and methods.  We provide a C<subscription_policy> method, but its initial value
+will have to be provided by the class, which can do something like look in a
+database table or hive.
+
+The two things of note are the inclusion of the Role::Subsystem role and the
+call to the C<list> method on line 22.  It should be pretty obvious that the
+list method gets the mailing list that the subscription manager belongs to, but
+where does it get that method?  It's set up, along with a lot of other useful
+behavior, by Role::Subsystem.
+
+Let's look at it line by line:
+
+  #!perl
+  with 'Role::Subsystem' => {
+    ident => __PACKAGE__,
+    type  => 'MLM::List',
+    what  => 'list',
+    getter => sub { MLM::List->retrieve($_[0]) },
+  };
+
+This says: "I am a subsystem known as (the current package's name).  I expect
+to be a delegate for an object of type MLM::List, which I'll store in my
+C<list> attribute.  If I only have the object's identifier, and not an object,
+I can get it with this subroutine."
+
+So, when we want a particular manager, we can say:
+
+  #!perl
+  MLM::SubscriptionManager->new({ list => $list });
+
+Role::Subsystem provides some shortcuts, though:
+
+  #!perl
+  MLM::SubscriptionManager->for_list($list);
+
+  MLM::SubscriptionManager->for_list_id( 1234 );
+
+The first form's behavior should be obvious.  It's great for putting in the
+C<subs_mgr> method we wrote earlier, and is really clear.
+
+The second one might be less straightforward.  It lets us get the subscription
+manager for a list that we haven't instantiated!  If it's very expensive to get
+a list, it might be a much better idea to just get the subsystem of it that we
+need.  If someone calls a method that needs the list object iself, it will call
+the L<list> method on the subsystem, which will lazily get the list using the
+getter we provided.
+
+This library might seem like it's performing only a very simple task, but you
+might be surprised at how useful it is.  See, the task it's performing I<is>
+simple, but it's I<also> boring.  By making it extremely easy to make these
+kinds of delegates, it's much more likely that code will get refactored into
+subsystems as soon as it's useful.  If this kind of refactoring requires boring
+slogging through extra delegation code, it will probably get put off until it's
+absolutely essential -- and that means it will probably be pretty painful.
+
+=head2 Under the Hood
+
+Role::Subsystem is a parameterized role, and something of an abuse of
+parameterized roles.  While I won't get into the implementation here, L<the
+source
+code|https://github.com/rjbs/role-subsystem/blob/master/lib/Role/Subsystem.pm>
+might be interesting to some, especially the bits about getters and weak
+reference management.
+
+=head1 See Also
+
+=for :list
+* L<Role::Subsystem>
+* L<Moose::Manual::Roles>
