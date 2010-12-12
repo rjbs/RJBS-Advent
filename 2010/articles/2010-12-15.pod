@@ -1,0 +1,237 @@
+Title:   Lovingly Mass-Produced HTML
+Package: HTML::Widget::Factory
+
+=head1 Hand-Crafted Bugs
+
+One of my goals at work has been to grossly reduce the amount of HTML that our
+HTML Guy writes.  Every time he writes more lines of HTML than are absolutely
+necessary, it's a failure.  This shouldn't be a weird idea, because HTML is
+code, and any time anybody writes more code than is needed to clearly express
+an idea, it's more likely to have mistakes.  For example, there's this input:
+
+  #!vim html
+  <input id='foo' value='bar'></input>
+
+Well, this input won't work as part of a form, because there's no C<name>
+attribute that tells the value how to get into the form.  Then there's the
+incredibly tedious generation of radio buttons partly in HTML and partly in
+Perl:
+
+  #!vim mason
+  %# This example uses Mason, because that's what I use. -- rjbs, 2010-12-12
+  % my %options = (
+  %   yes   => 1,
+  %   no    => 0,
+  %   maybe => -1,
+  % );
+  % for my $option (%options) {
+  %   my $value = $options{ $option };
+  %   my $selected = $ARGS{is_jolly} eq $value ? q{selected='selected'} : q{};
+      <input type='radio' name='is_jolly' <% $selected %>
+        value='<% $value %>'></input> <% $option %>
+  % }
+
+Building HTML like this over and over is just horrible, and it gets worse when
+the people producing the HTML aren't also expected to be very good Perl
+programmers.  There needs, instead, to be a very simple way to say things like,
+"and then I want a radio button" -- because "we'll just be very careful each
+time" is not a viable strategy for anything in programming, and especially not
+anything boring that gets done frequently.  The right solution is, as usual,
+"build a reusable component."
+
+=head1 The Widget Factory
+
+What we wanted was to provide a simple way to say, "make a radio button here"
+and always get the right thing -- and to make it easy enough to provide custom
+tweaks that we'd almost I<never> have to resort to hand-written HTML.
+
+We built L<HTML::Widget::Factory>, which serves as a hub for plugins that build
+HTML.  For example, consider that gross radio-button-building example, above.
+We had a list of options, C<%options>, and the value of the currently selected
+one in C<%ARGS>.  We ignored a bunch of considerations like option ordering, or
+warning that would arise if the existing C<is_jolly> argument was undef,
+because they would have made the example even uglier.  The widget factory
+I<does> deal with those problems, but the code looks fine, because it's
+abstracted away:
+
+  #!vim perl
+  my $factory = HTML::Widget::Factory->new;
+
+  print $factory->radio({
+    name     => 'is_jolly',
+    selected => $ARGS{is_jolly},
+    options  => [
+      [ yes   => 1  ],
+      [ no    => 0  ],
+      [ maybe => -1 ],
+    ],
+  });
+
+We work primarily with Mason, and have added a factory to our
+HTML::Mason::Request subclass, so in a component, we'd write the above as:
+
+  #!vim mason
+  <% $m->widget->radio({
+    name     => 'is_jolly',
+    selected => $ARGS{is_jolly},
+    options  => [
+      [ yes   => 1  ],
+      [ no    => 0  ],
+      [ maybe => -1 ],
+    ],
+  }) %>
+
+Or we could set up a bunch of checkboxes:
+
+  #!vim perl
+  my @properties = qw( is_jolly is_naughty is_sleeping celebrates_christmas );
+
+  for my $prop (@properties) {
+    print $m->widget->checkbox({
+      id      => $prop,
+      value   => 1,
+      checked => $user->$prop
+    });
+  }
+
+Part of the factory's job way of making things easy to get right is in filling
+in all the boring attributes the right way.  For example, we gave an attribute
+id, but not a name.  The name will default to the id.  The checked value is
+just a boolean that results in either C<checked="checked"> or nothing.  This
+kind of behavior is all over: text gets HTML escaped, common element attributes
+(like id, class, and others) are handled for you, and so on.
+
+If you have to pass something weird into the produced element, you can often
+put it into the C<attr> argument:
+
+  #!perl
+  $factory->input({
+    name => 'stocking_position',
+    attr => {
+      usemap    => $image_map,
+      accesskey => 'S',
+    },
+  });
+
+=head1 Adding New Products to the Factory
+
+Everything that the factory produces comes out of a plugin.  There are a bunch
+of really useful plugins, but it's easy to write more.  This is the source for
+one of the simpler plugins, used to generate C<textarea> elements:
+
+  #!perl
+  package HTML::Widget::Plugin::Textarea;
+  use parent 'HTML::Widget::Plugin';
+  use HTML::Element;
+
+  sub provided_widgets { qw(textarea) }
+
+  sub _attribute_args { qw(disabled id) }
+  sub _boolean_args   { qw(disabled) }
+
+  sub textarea {
+    my ($self, $factory, $arg) = @_;
+
+    $arg->{attr}{name} = $arg->{attr}{id} if not defined $arg->{attr}{name};
+
+    my $widget = HTML::Element->new('textarea');
+
+    $widget->attr($_ => $arg->{attr}{$_}) for keys %{ $arg->{attr} };
+
+    $widget->push_content($arg->{value});
+
+    return $widget->as_XML;
+  }
+
+When you call the C<textarea> method on a factory with this plugin, the
+arguments are rewritten in light of the C<_attribute_args> and C<_boolean_args>
+given.  Boolean args produce those weird C<x='x'> things expected for true
+values in HTML, and attribute args are then merged directly into the C<attr>
+argument described above.  The C<textarea> method gets called with the
+rewritten args and is expected to return HTML.
+
+Notice that the method gets passed C<$factory>, the object on which C<textarea>
+actually got called.  This means that you can write widget plugins defined in
+terms of other widgets.  For example, the (non-core) plugin
+L<HTML::Widget::Plugin::Struct> takes a Perl data structure and turns it into a
+bunch of hidden form inputs that can be reconstructed into the data structure
+by L<CGI::Expand>.  For example, it can turn:
+
+  #!perl
+  my $struct = {
+    name     => 'Edwin Ample',
+    favorite => {
+      pie   => 'apple',
+      movie => 'Elf',
+      fowl  => 'duck',
+    },
+    siblings => [ qw(Elmer Ebenezer Eric) ],
+  };
+
+  $factory->struct({ name => 'person', value => $struct });
+
+...into...
+
+  #!vim html
+  <input type='hidden' name='person.name' value='Edwin Ample' />
+
+  <input type='hidden' name='person.favorite.pie'   value='apple' />
+  <input type='hidden' name='person.favorite.movie' value='Elf' />
+  <input type='hidden' name='person.favorite.fowl'  value='duck' />
+
+  <input type='hidden' name='person.siblings.0'  value='Elmer' />
+  <input type='hidden' name='person.siblings.1'  value='Ebenezer' />
+  <input type='hidden' name='person.siblings.2'  value='Eric' />
+
+It does that by repeatedly calling the C<hidden> method on the factory, so it
+gets exactly the same kind of hidden inputs that the rest of our code does --
+and the thing producing those inputs can be replaced if we want all our hidden
+inputs to have different properties, like using end tags instead of C<< /E<gt>
+>> empty tag markers.
+
+Because the C<struct> widget is implemented by a class, we can do things like
+subclass the struct widget to make an editable struct (maybe by turning array
+entries into multiselects and everything else into normal inputs), or do emit a
+C<script> element with a L<JavaScript representation of the
+structure|HTML::Widget::Plugin::JS>  in it.
+
+In the end, we can get all kinds of uniform, bug-free content produced with a
+nice, simple interface.
+
+=head1 Experiments and Annoyances
+
+One early complaint we got internally about the factory was that it had too
+many quirks because of how Mason and Perl were interacting, and that it would
+be better if the widgets all worked like Mason components.  In response, Dieter
+Pearcey wrote the excellent L<MasonX::Resolver::WidgetFactory>, which exposed a
+Mason component-like interface, allowing code like this:
+
+  #!vim mason
+  <& /w/select, id => "myselect", options => \@options &>
+
+Then, we added L<MasonX::Resolver::Multiplex>, which let us say that things
+found under F</w> would look first in on disk and then in the widget factory.
+This meant we could let the HTML authors write simple widgets as basic
+Mason components, and then alter we could turn them into faster or more
+reusable Perl plugins, and the interface wouldn't need to change.
+
+Unfortunately, Mason's caching layer would break on this sometimes, because
+widget factories are blessed into weirdly-named, auto-generated classes in
+order to resolve methods like L<textarea> to the right plugin.  These names
+might change or be generated in the wrong runtime order, breaking things that
+have cached objets blessed into them.
+
+This is a surmountable problem, although tedious and annoying, so we haven't
+addressed it yet.  It's one of the places where Perl's lack of per-instance
+method resolution really becomes a hinderance.  Instead, we were forced to ask 
+HTML Guy to suck it up, for now, and use C<< $m->widget >>.
+
+Before the end of Advent, I'll talk about potential solutions to this kind of
+problem.
+
+=head1 See Also
+
+=for :list
+* L<HTML::Widget::Factory>
+* L<MasonX::Resolver::WidgetFactory>
+* L<MasonX::Resolver::Multiplex>
