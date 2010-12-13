@@ -63,7 +63,130 @@ the next question was just what we needed in our context.
 
 =head1 The Content of The Context
 
+We decided that for any given action, we'd only care about a few things:
 
+=for :list
+1. a handle for performing authorization checks; the auth I<Token>
+2. a record of where the request came from (via email?  the web?  what IP?); the request's I<Terminal>
+3. a simple stack of how the request came in and got routed; the I<Stack>
+
+Auth token could come in all forms.  We might get a web request from a user
+with a logged-in session identified in his cookie.  We might get an OAuth
+signed request with a token associated with a user and a subset of that user's
+rights.  The token might even just represent "being run by employee F<rjbs> who
+has superuser privileges."  What we I<do> know is that it isn't going to change
+one we get it.  Every request has exactly one valid token, and once we have it,
+we don't change it.  Tokens are associated with users.
+
+The terminal, too, is pretty straightforward.  We can tell, looking at the web
+request or the console program being run, where the request came from.  Once we
+know that, it never needs to change.
+
+Both the token and the terminal can be represented by URIs, although we might
+want to use private URI schemas for them:  C<myapp://token/websession/1234>
+
+The stack isn't very complicated, either.  It's an array of frames, and each
+frame doesn't need much more than a name.  Imagine that user on the web has
+uploaded a list of contacts to add to his address book.  We might have the
+following context, when we get to the underlying code that's going to do the
+import:
+
+  #!vim yaml
+  token:
+    uri : myapp://token/websession/1234
+    user: MyApp::User object
+  terminal:
+    uri : ip://1.2.3.4
+  stack:
+    - account setup wizard
+    - address book manager
+    - contact importer
+
+The stack can add and drop frames as the program runs and execution enters and
+exits subroutines.  We don't tie the context's stack to the program's stack
+one-to-one, because that would make refactoring the code much more complicated.
+Instead, we can just add frames dynamically, and Perl will pop them off when
+we leave that part of the program.
+
+We get that benefit by making the context object a real old-fashioned global
+variable that can be localized with C<local>.
+
+=head1 Putting Things into Context
+
+A simple program that uses Global::Context might look something like this:
+
+  #!perl
+  use Global::Context -all, '$Context';
+
+  ctx_init({
+    terminal   => 'ip://1.2.3.4',
+    auth_token => 'myapp://token/websession/123',
+  });
+
+This imports a C<$Context> global and initializes it by calling C<ctx_init>.
+If some other part of the program has already initialized the context, an
+exception is thrown -- once we've set up the starting context, we're only
+supposed to replace it locally.  For example, if our first action is to decide
+to route down into the setup wizard, we might write this:
+
+  #!perl
+  # our request is routed to the setup wizard:
+  if ( ... ) {
+    local $Context = ctx_push("account setup wizard");
+
+    $wizard->process_request( $r );
+  }
+
+  $Logger->log("program complete");
+
+That's it!  We've pushed a frame onto the stack.  C<$Context> is now a new
+object, identical to what it was before, safe for the extra stack frame.  We
+can keep pushing onto the stack as we descend through our program -- or we can
+leave it untouched.  As we go back up the frame, the previous value is
+restored.  For example, by the time we're logging "program complete," above,
+the "account setup wizard" stack frame is gone.
+
+This works because we've made sure that every part of the context is immutable.
+Nothing that we change at a deeper scope will be changed and then lost when we
+exit that scope.  The only allowable change is the addition of stack frames.
+
+Marrying the context to logging make it easy for any part of the program to
+mention, in its, logs, why it's doing something, without changing its API at
+all to allow caller info to be passed in.  That is, we can take some deep,
+crufty old routine and make it tell us exactly why it's doing something
+dangerous:
+
+  #!perl
+  sub __randomize_user_password {
+    my ($self, $enc, $str, $dig, $_uk1, $uk_3, $uk_2, @rest) = @_;
+
+    # log exactly why we're going to do this:
+    $Logger->log([
+      "randomizing user password for %s because of %s",
+      $self->user_id,
+      $Context->as_json,
+    ]);
+
+    $self->password = re_enc($uk1, ...);
+  }
+
+=head2 Specialized Context
+
+Token, terminal, and stack behavior are all implemented as roles.  Because it's
+pretty likely that different users of a system like Global::Context would want
+to allow different kinds of token, users, and so on, it's easy to subclass any
+part of the system with more specific restrictions.
+
+If the only kind of terminal you want to support is a web browser, you can
+write a single Terminal class and require that the context object's terminal
+attribute be a member of it.
+
+=head1 The Future
+
+The future of this totally untested software (and idea) is, well, to be tested.
+It's a design we've been thinking about for quite some time, but it needs to
+see some real combat.  After that, it will probably either fail and never be
+seen again, or it will stick and simplify large amounts of our code.
 
 =head1 See Also
 
