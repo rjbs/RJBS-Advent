@@ -379,6 +379,6 @@ would be.
 =for :list
 * L<synrtf|https://github.com/rjbs/misc/blob/master/synrtf>
 * L<sample output of C<synrtf>|http://advent.rjbs.manxome.org/2010/synrtf.rtf>
-* L<Vim::TextColor>
+* L<Text::VimColor>
 * L<RTF::Writer>
 * L<The RTF Pocket Guide|http://www.oreilly.com/catalog/rtfpg>
