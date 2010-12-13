@@ -1,0 +1,265 @@
+Title:   Shuffle Smarter, Not Harder
+Package: albumen
+
+=head2 NOT ON THE CPAN
+
+Today's article is about code not found on the CPAN.  In fact, this code won't
+even work anymore on many new compiles of C<perl>.  It's still an interesting
+idea, and maybe I will rewrite it to use the scripting bridge in some other way
+-- either via PerlObjCBridge or some non-Perl language with a working scripting
+bridge.
+
+=head1 Albums as Atomic Units
+
+Some recording artists are still refusing to be sold through the iTunes music
+store, in part because they can't restrict shoppers from buying single tracks.
+That is, some artists want to say, "I made an album.  You can buy the whole
+album, or you can go buy something else.  You can't just buy track nine."  I
+can really get behind that.  These guys are artists, and they don't want people
+to I<think> they've experienced their work if they've really just experienced
+part of it, out of context.
+
+Unfortunately, the idea that "music is organized into tracks, and tracks can be
+shuffled arbitrarily" is getting more and more popular with the rise of MP3
+players.  Years ago, I realized that because of the way I built my "smart
+playlists" in iTunes, I was very rarely hearing large parts of albums that I
+liked, and that I was almost I<never> listening to whole albums.  When I
+realized this, I spent a few days only listening to whole albums, and it was
+fantastic.  After that, I felt sad that it was so hard to keep doing that
+daily.
+
+iTunes didn't have a way to make smart playlists that included whole albums.
+The iPod had recently lost the ability to shuffle by albums, too -- making
+listening to classical music much harder.
+
+After sulking for a while, I realized that this would be really easy to fix by
+stepping outside the smart playlist editor and reaching for L<Mac::Glue> to
+analyze my library and build a playlist by hand.
+
+The code that follows does this, and I will sprinkle annotations explaining how
+it all works.
+
+=head1 F<albumen>
+
+  #!perl
+  use strict;
+  use warnings;
+
+  use Getopt::Long::Descriptive;
+  use List::Util qw(sum);
+  use Mac::Glue qw(:glue);
+
+  my ($opt, $usage) = describe_options(
+    '%c %o',
+    [ 'interactive|i!', 'prompt for each album' ],
+  );
+
+  my $itunes = Mac::Glue->new('iTunes');
+
+So far, we've prepared to run our program, and gotten our handle on the iTunes
+automation "glue."
+
+  #!perl
+  my $pl = $itunes->obj(playlist => whose(name => equals => 'Regularer'))->get;
+  my $albumen = $itunes->obj(playlist => whose(name => equals => 'Albumen'))->get;
+
+  die "couldn't find target playlist" unless $albumen;
+
+We're going to consider as our input tracks in the "Regularer" playlist, which
+is a smart playlists that filters out stuff that, more or less, isn't really
+music, like spoken word, podcasts, and jazz.  When we build our playlist out,
+it will go into the playlist "Albumen."
+
+  #!perl
+  {
+    my $tracks = $itunes->obj(
+      track     => gAll,
+      playlist => $albumen->prop('index')->get,
+    );
+
+    $_->delete for $tracks->get;
+  }
+
+  print "getting tracks\n";
+
+  my @tracks = $pl->obj('tracks')->get;
+
+We empty out the old playlist from Album and get our new set of tracks to
+consider adding.
+
+  #!perl
+  my %album;
+
+  while (my $track = shift @tracks) {
+    my $trackid = $track->prop('database ID')->get;
+    my $album   = $track->prop('album')->get;
+    my $artist  = $track->prop('compilation')->get
+                ? '-'
+                : $track->prop('artist')->get;
+
+    next unless defined $album and defined $artist;
+    next unless length  $album and length  $artist;
+
+    my $rec = $album{ $album, $artist } ||= [];
+
+    printf "storing record of $trackid ($album/$artist); %s left\n", 0 + @tracks;
+
+    push @$rec, {
+      id     => $trackid,
+      rating => scalar $track->prop('rating')->get,
+      played => scalar $track->prop('played date')->get, # epoch sec
+    };
+  }
+
+Here, we build up C<%album>, a hash in which keys are album/artist pairs (using
+the justly-maligned list-in-hash-subscript-means-join-with-C<$;> feature)
+and values are arrayrefs of tracks.  Now that we've got a data structure
+suitable for building our playlist, we can really get to work.
+
+  #!perl
+  my $DEFAULT_TIME = time - 30 * 86_400;
+  my %avg_age;
+
+  ALBUM: for my $key (keys %album) {
+    my ($album, $artist) = split $;, $key;
+    printf "considering (%s/%s)\n", $album, $artist;
+
+    my @tracks = @{ $album{ $key } };
+
+    unless (@tracks > 4) {
+      printf "skipping (%s/%s); too few tracks\n", $album, $artist;
+      delete $album{$key};
+      next ALBUM;
+    }
+
+We start iterating through all the albums we've got to consider, and skip any
+album with fewer than four tracks available.  Once, I skipped any album that
+didn't have all of its tracks available, but this ended up causing problems
+with albums with some tracks that were not "Regularer" music, like hip hop
+albums with "spoken word" tracks, or with albums that had no "total tracks"
+tags.
+
+  #!perl
+    my @lp_dates = map { undef $_ if $_ eq 'msng'; $_ || $DEFAULT_TIME }
+                   map { $_->{played} }
+                   @tracks;
+
+    my $avg_age  = time - (sum(@lp_dates) / @lp_dates);
+    $avg_age{ $key } = $avg_age;
+
+    if ($avg_age < 86_400 * 30) {
+      printf "skipping (%s/%s); too recent\n", $album, $artist;
+      delete $album{$key};
+      next ALBUM;
+    }
+
+Next, we figure out the average "last listened to" of the album.  If we've
+listened to the whole thing recently, or to a lot of its tracks recently, we
+remove it from the playlist.  This works really well, because iPod and iTunes
+will update the "last played," so the next time you sync your iPod and run
+F<albumen>, the albums you've listened to since your last sync will be
+replaced.
+
+  #!perl
+    my @ratings    = grep { $_ > 0 } map { $_->{rating} } @tracks;
+    my $avg_rating = sum(@ratings) / @ratings if @ratings;
+
+    if ($avg_rating and $avg_rating < 65) {
+      printf "skipping (%s/%s); too lousy\n", $album, $artist;
+      delete $album{$key};
+      next ALBUM;
+    }
+
+    printf "keeping (%s/%s) @ %s\n", $album, $artist, $avg_rating || '(n/a)';
+  }
+
+After removing albums we've heard too recently, we remove albums we don't want
+to hear ever again.  We get an average of ratings, skipping unrated tracks, and
+drop the album if it's got under a three and a quarter star rating.  (The
+stars displayed in iTunes are counted as 20 "rating points" in the scripting
+interface.)
+
+Now we've gotten down to just albums we'll consider putting in the playlist:
+nothing we've just listened to, and nothing we dislike.  Now it's time to start
+building the playlist:
+
+  #!perl
+  my $total_size = 0;
+  my %seen_artist;
+  my %included_track;
+  ADDITION: for my $key (sort { $avg_age{$b} <=> $avg_age{$a} } keys %album) {
+    my ($album, $artist) = split $;, $key;
+    if ($artist ne '-' and $seen_artist{ $artist }) {
+      printf "skipping (%s/%s); already have album by this artist\n",
+        $album, $artist;
+      next ADDITION;
+    }
+
+We'll use C<%seen_artist> to keep track of artists whom we've added to our
+playlist already.  If we've already added a
+L<Negativland|http://en.wikipedia.org/wiki/Negativland> album, we won't add
+another one.  I had to add this feature after I ended up, one day, with a
+playlist of nothing but Elvis Costello.  It wasn't I<bad> so much as
+overwhelming.
+
+  #!perl
+    if ($opt->{interactive}) {
+      local $|;
+      $|++;
+      for (1) {
+        print "include ($album by $artist)? ";
+        my $line = <STDIN>;
+        next ADDITION if $line =~ /^n/;
+        redo unless $line =~ /^y/;
+      }
+    }
+
+Sometimes, you just want to be able to veto something that would otherwise show
+up.  Maybe it's time for me to listen to Tragic Kingdom again, but I'm just not
+ready to hear it again.  Interactive mode lets me tell F<albumen> to wait for
+next time.
+
+  #!perl
+    $seen_artist{ $artist }++;
+    my @tracks = @{ $album{ $key } };
+
+    for my $track (@tracks) {
+      my $t = $itunes->obj(
+        track => whose('database id' => equals => $track->{id})
+      )->get;
+
+      $total_size += $t->prop('size')->get; # in bytes
+
+      my $dupe_track = $itunes->duplicate($t, to => $albumen);
+      unless ($dupe_track) {
+        warn "could not dupe track\n";
+        next;
+      }
+      $included_track{ $dupe_track->prop('database id')->get } = 1;
+    }
+
+    last ADDITION if $total_size > 1_000_000_000;
+  }
+
+Finally, we add the tracks and make a record of adding them.  If we've gotten
+our playlist up to a gig, we're done.  Otherwise, we go ahead and look for
+another album.
+
+=head1 The Gift of Music
+
+I can honestly say that writing this program improved the quality of my life.
+Maybe not by leaps and bounds, but it made me remember how albums sounded.  I
+found that many albums in my library were I<much> better taken as a whole than
+as individual tracks, and that means that I was now enjoying my music
+collection much more than I had in years.
+
+It's the ability to keep "last played" and "play count" data synced with my
+mobile device that's kept me hooked on iTunes, despite its numerous, crushing
+flaws.  I encourage anybody who uses other music software to reproduce this
+program for his software, just to see how nice it can be.
+
+=head1 See Also
+
+=for :list
+* L<albumen|https://github.com/rjbs/misc/blob/master/itunes/albumen> - you'll need to tweak it for your own use
+* L<Mac::Glue> - once again making OS X a pretty cool place to live
