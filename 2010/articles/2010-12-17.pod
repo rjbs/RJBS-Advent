@@ -1,0 +1,72 @@
+Title:   When in doubt, add more globals.
+Package: Global::Context
+
+=head2 EXPERIMENTAL CODE AHEAD
+
+L<Last week|2010-12-10.html>, I wrote about the highly experimental
+DNS::Oterica.  This week, I'll be talking about the dangerously experimental
+L<Global::Context>.  Although I hope to have a first release to the CPAN before
+this post goes live, who knows!  Maybe you'll be stuck looking for it on
+GitHub.
+
+=head1 The Law of Demeter Sucks
+
+Actually, I'm a pretty firm believer in at least a modified form of the L<Law
+of Demeter|http://en.wikipedia.org/wiki/Law_of_Demeter> in designing systems,
+but sometimes you really need a global.  Sometimes the only alternative to a
+global is L<inversion of
+control|http://en.wikipedia.org/wiki/Inversion_of_control>, a fairly complex
+pattern to implement.  That doesn't mean that globals are always a better
+choice than IOC, just that both are choices.  (Like many other often-lousy
+program choices, global variables have been more maligned than they deserve.
+They deserve to be disliked, but maybe not quite demonized.)
+
+Years ago, we wanted to run all code inside of dynamic scopes that would
+provide "context" for the call.  We called the notional project
+Class::Contexual.  Context would tell us things like what user had initiated
+the request, from what IP, and what URL had been hit.  This wouldn't just be
+part of our web framework, though.  Scripts run by the customer service staff
+would provide the same kind of context.
+
+Since we'd always have the same kind of context, we could always check
+permissions by using a single authorization system built into the user class.
+When logging, we'd always know where requests came from.  The important thing
+was that we'd always have a context, and the context would be the same type of
+object everywhere.  Our notional API looked something like:
+
+  #!perl
+  sub do_stuff {
+    my ($self, @args) = @_;
+
+    X::Permission->throw unless $self->context->user->can_do_stuff;
+
+    $self->with_more_context({ action => 'doing stuff' })->do_else;
+  }
+
+Then, C<do_else> would be called on some clone of C<$self> that differed only
+in context.
+
+The whole thing got really messy really quick, and eventually we abandoned the
+idea and just stuck to looking at the web request.
+
+Years later, the idea kept coming up here and there as a solution to a number
+of different problems.  We finally said, "You know what?  This is just what
+global variables are for."  After all, the context is describing the global
+execution context.  It's only for code that we have written and run internally,
+and isn't going to be consumed by general publicly distributed code.
+
+We even made sure that the global context system could be re-used by multiple
+sets of libraries in a single process by making the specific global variable
+used pluggable.  That is, two different systems could use the global context
+system without clobbering each others context.  With that much safety ensured,
+the next question was just what we needed in our context.
+
+=head1 The Content of The Context
+
+
+
+=head1 See Also
+
+=for :list
+* L<Global::Context> - if it's on the CPAN
+* L<Global::Context|https://github.com/rjbs/global-context> - if it's not
