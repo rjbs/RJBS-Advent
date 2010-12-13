@@ -348,7 +348,7 @@ this (forgive my pseudo-AppleScript):
     get body of current slide
     write body to file with path P
     execute shell command "synrtf P > P.rtf"
-    set rtf to (read file with path (P + ".rtf"))
+    set rtf to (read file with path (P & ".rtf"))
     set body of current slide to rtf
   end tell
 
