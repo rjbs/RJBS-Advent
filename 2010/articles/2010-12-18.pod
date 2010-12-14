@@ -1,7 +1,60 @@
-Title:   In Lieu of Coal, Naughty Children May Be Given M4 Files
+Title:   If you decide to have a merry Christmas, turn to page 4
 Package: Pod::CYOA
 
 =head1 You are standing outside an undocumented Perl module.
+
+Over time, I've released or taken over quite a few distributions on the CPAN,
+and the process of making new releases or new distributions grew more and more
+tedious and annoying.  For a while, I worked on and used L<Module::Starter>,
+and I tried other tools, but in the end I wrote my own distribution manager,
+L<Dist::Zilla>, which I L<wrote about last
+year|http://advent.rjbs.manxome.org/2009/2009-12-11.html>.  I published it to
+the CPAN pretty soon after getting it barely working, but its documentation
+ranged from lousy to unwritten.
+
+Before that, I was generally very fastidious about documenting my libraries,
+because I knew that without documentation, they'd be much harder to use.  With
+Dist::Zilla, though, the problem wasn't laziness, it was the fitness to task of
+the traditional CPAN style of documentation.  Many, probably most, CPAN
+distributions have a few core modules where nearly all documentation can live,
+explaining the methods or subroutines that make up the library.
+
+Dist::Zilla was much more distributed than that.  It had a central "hub" class,
+but all of the power of the class was in tiny little plugins.  It worked mostly
+through the emergent behavior of many plugins working together.  I could have
+documented every plugin, and it would not have been helpful.  I could have
+documented the configuration in which I<I> used the plugins, but this would
+have too strongly emphasized one possible configuration, instead of the many
+totally different configurations possible.
+
+I wanted to write a tutorial that would walk the reader though using
+Dist::Zilla from start to finish, no matter what the starting point was, and no
+matter the kind of configuration he wanted.  So, I wanted a corpus of
+interlinked document with no definite order or closure.  The first obvious
+answer was to make a wiki, but there was a significant problem:  I I<hate>
+wikis.  Some of my reasons are or aren't relevant here, but there was another
+consideration: I didn't want to make the tutorial linear, but I did want to
+make it directional.  From any given point, there would be a few possible next
+hops.  Sometimes they'd double back, and sometimes not.
+
+Obviously what I wanted was a L<Choose Your Own
+Adventure|http://en.wikipedia.org/wiki/Choose_Your_Own_Adventure> story.
+
+=head1 If you decide to settle for a gross hack, turn to page 9
+
+I also knew that I wanted to write my documentation in L<Pod|perlpod>, because
+I really like Pod, and wanted to be able to convert to other formats, if
+needed.  The problem was that Pod tools are a pretty mixed and messy bag.
+L<Pod::Simple> has good tools for converting from Pod to other formats, but
+isn't great and doing document manipulation.  L<Pod::Elemental> is pretty good
+for restructuring documents, but doesn't provide anything needed for dealing
+with formatting codes or format translation.
+
+Since (perhaps surprisingly) my goal was to get things done, rather than have
+fun writing tools, I decided to build a hacky solution by glomming multiple
+incompatible tools together instead of building a single organic solution.  I'd
+use Pod::Elemental to rewrite not-quite-Pod into real Pod (with hints for
+L<Pod::Simple::XHTML>) and then Pod::Simple::XHTML turns it into HTML.
 
 =head1 See Also
 
