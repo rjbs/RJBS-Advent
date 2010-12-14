@@ -15,7 +15,7 @@ remember:
   #     expected: 'Foo.
   # '
 
-You'll stare at that for a long time* before having the clever idea of piping
+You'll stare at that for a long time before having the clever idea of piping
 the test through C<cat -A> -- only to find that you're only expecting a
 carriage return and newline, but you're getting a newline.  After the hundredth
 time, you learn to bring C<cat -A> into play as soon as you see this kind of
