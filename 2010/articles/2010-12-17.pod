@@ -5,9 +5,7 @@ Package: Global::Context
 
 L<Last week|2010-12-10.html>, I wrote about the highly experimental
 DNS::Oterica.  This week, I'll be talking about the dangerously experimental
-L<Global::Context>.  Although I hope to have a first release to the CPAN before
-this post goes live, who knows!  Maybe you'll be stuck looking for it on
-GitHub.
+L<Global::Context>.
 
 =head1 The Law of Demeter Sucks
 
