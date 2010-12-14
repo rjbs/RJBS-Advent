@@ -71,7 +71,7 @@ operating systems fail, with no visible differences?
   # ------------------------              ! 65---------------------- e          
 
 Both encode the name of Queensrÿche, complete with L<heavy metal
-umlaut|http://en.wikipedia.org/wiki/Heavy metal umlaut>, but the byte sequences
+umlaut|http://en.wikipedia.org/wiki/Heavy_metal_umlaut>, but the byte sequences
 differ.  The first is LATIN SMALL LETTER Y WITH DIAERESIS, but the second is a
 combining sequence: LATIN SMALL LETTER Y, followed by COMBINING DIAERESIS.
 
