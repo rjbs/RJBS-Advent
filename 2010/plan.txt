@@ -23,7 +23,7 @@ x 14 - Test::BinaryData
 x 15 - HTML::Widget::Factory
 x 16 - Role::Subsystem
 x 17 - Global::Context
-  18 - Pod::CYOA \ delicious-backup
+x 18 - delicious-backup
   19 - Sub::Exporter::GlobExporter \ Exception::Reporter
 x 20 - (albumen)
   21 - Test::Routine

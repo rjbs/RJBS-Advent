@@ -1,0 +1,75 @@
+Title:   We'll Have a Blue Christmas Without del.icio.us
+Package: Net::Delicious::Simple
+
+=head1 What Color is Your Data's Parachute?
+
+Synchronising your data across multiple computers is hard -- I<really> hard.
+More and more, services spring up to keep all your data in one place,
+accessible from all your computers.  As more and more of your personal
+belongings become always-on parts of the Internet, all able to access more and
+more of your on-the-Internet data, it's like you're constantly surrounded by a
+cloud of all your information, always available but never weighing you down.
+The problem is that when your data is only supported by clouds, the clouds
+might dissipate at any time, leaving all your precious data in free fall.
+
+If you're going to rely on cloud-backed systems, it's always a good idea to
+make sure that you've got a regularly updated backup copy safely on the ground,
+even if it's only on one system and inconvenient to use.  After all,
+inconvenient will still be pretty good compared to "totally lost."
+
+As a lot of people probably know by now, Yahoo! recently laid off quite a lot
+of staff, including (reportedly) the entire L<http://del.icio.us/> team.  Other
+widely-reported leaks say that Delicious is going to be shut down for good.
+If you long ago replaced all your other bookmarks with Delicious, and Delicious
+goes away, you will suddenly be without your bookmarks.
+
+I started using Delicious back in 2004, when it was still pretty new, and was
+immediately gripped with fear that it would go away, leaving me bookmarkless.
+Eventually, too, I knew I'd want to migrate to my personal blog and bookmark
+manager, L<Rubric>, and to do that, I'd need my bookmarks in some kind of
+intermediate form.
+
+Fortunately, Delicious even then provided a good API for getting at your data,
+and L<Aaron Straup Cope|http://search.cpan.org/~ascope/> wrote a nice L<Perl
+interface|Net::Delicious> to it.  It was pretty easy for me to write a
+stripped down version and a L<simple "dump my bookmarks"
+program|http://search.cpan.org/dist/delicious-backup/bin/delbackup>. 
+
+=head2 Using F<delbackup>
+
+First, create a F<.delicious> file in your home directory with your Delicious
+credentials in it:
+
+  #!code
+  user: username
+  pswd: password
+
+Then, run F<delbackup> with one of two switches:
+
+  #!code
+  rjbs$ delbackup -y
+
+  rjbs$ delbackup -ns
+
+C<-y> dumps your bookmarks as YAML so you can import them into any other API
+you want, later.  C<-ns> dumps them into a HTML document, organized by tags.
+It's a Netscape bookmark file, so you can import it into nearly any web
+browser, but you'll end up with lots of weird duplicates because Delicious uses
+tags and the Netscape bookmarks format uses (virtual) folders.
+
+=head2 Problems Installing Net::Delicious?
+
+In version 1.13, Net::Delicious's F<Build.PL> used some features that basically
+nothing else ever did, and they're not well supported.  Under many common
+configurations, it just won't install normally.  I've just uploaded a new
+version, but if your CPAN mirror is extremely out of date, you can download
+L<my Net-Delicious
+tarball|http://www.cpan.org/authors/id/R/RJ/RJBS/Net-Delicious-1.14.tar.gz>
+directly.
+
+=head1 See Also
+
+=for :list
+* L<Net::Delicious::Simple> - which installs the F<delbackup> program
+* L<Net::Delicious> - for more complicated interface with the API
+* L<Rubric> - for running your own bookmark server (it's sort of ... rustic)
