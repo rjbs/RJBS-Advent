@@ -189,5 +189,4 @@ seen again, or it will stick and simplify large amounts of our code.
 =head1 See Also
 
 =for :list
-* L<Global::Context> - if it's on the CPAN
-* L<Global::Context|https://github.com/rjbs/global-context> - if it's not
+* L<Global::Context>
