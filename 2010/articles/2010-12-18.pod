@@ -3,19 +3,20 @@ Package: Net::Delicious::Simple
 
 =head1 What Color is Your Data's Parachute?
 
-Synchronizing your data across multiple computers is hard -- I<really> hard.
-More and more, services spring up to keep all your data in one place,
-accessible from all your computers.  As more and more of your personal
-belongings become always-on parts of the Internet, all able to access more and
-more of your on-the-Internet data, it's like you're constantly surrounded by a
-cloud of all your information, always available but never weighing you down.
-The problem is that when your data is only supported by clouds, the clouds
-might dissipate at any time, leaving all your precious data in free fall.
+Multi-master synchronization of an application's data across multiple computers
+is hard -- I<really> hard.  More and more, services spring up to keep all your
+data in just one place, accessible from all your computers.  As more and more
+of your personal belongings become always-on parts of the Internet, all able to
+access more and more of your on-the-Internet data, it's like you're constantly
+surrounded by a cloud of all your information, always available but never
+weighing you down.  The problem is that when your data is only supported by
+clouds, the clouds might dissipate at any time, leaving all your precious data
+in free fall.
 
 If you're going to rely on cloud-backed systems, it's always a good idea to
 make sure that you've got a regularly updated backup copy safely on the ground,
 even if it's only on one system and inconvenient to use.  After all,
-inconvenient will still be pretty good compared to "totally lost."
+"inconvenient" will still be pretty good compared to "totally lost."
 
 As a lot of people probably know by now, Yahoo! recently laid off quite a lot
 of staff, including (reportedly) the entire L<http://del.icio.us/> team.  Other
@@ -26,7 +27,7 @@ goes away, you will suddenly be without your bookmarks.
 I started using Delicious back in 2004, when it was still pretty new, and was
 immediately gripped with fear that it would go away, leaving me bookmarkless.
 Eventually, too, I knew I'd want to migrate to my personal blog and bookmark
-manager, L<Rubric>, and to do that, I'd need my bookmarks in some kind of
+manager, L<Rubric>.  To do that, I'd need my bookmarks in some kind of
 intermediate form.
 
 Fortunately, Delicious even then provided a good API for getting at your data,
