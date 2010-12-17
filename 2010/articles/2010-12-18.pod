@@ -3,7 +3,7 @@ Package: Net::Delicious::Simple
 
 =head1 What Color is Your Data's Parachute?
 
-Synchronising your data across multiple computers is hard -- I<really> hard.
+Synchronizing your data across multiple computers is hard -- I<really> hard.
 More and more, services spring up to keep all your data in one place,
 accessible from all your computers.  As more and more of your personal
 belongings become always-on parts of the Internet, all able to access more and
