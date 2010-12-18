@@ -20,9 +20,9 @@ even if it's only on one system and inconvenient to use.  After all,
 
 As a lot of people probably know by now, Yahoo! recently laid off quite a lot
 of staff, including (reportedly) the entire L<http://del.icio.us/> team.  Other
-widely-reported leaks say that Delicious is going to be shut down for good.
-If you long ago replaced all your other bookmarks with Delicious, and Delicious
-goes away, you will suddenly be without your bookmarks.
+widely-reported leaks said that Delicious would be shut down for good.  If you
+long ago replaced all your other bookmarks with Delicious, and Delicious went
+away, you would suddenly be without your bookmarks.
 
 I started using Delicious back in 2004, when it was still pretty new, and was
 immediately gripped with fear that it would go away, leaving me bookmarkless.
