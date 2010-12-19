@@ -161,8 +161,8 @@ pre {
 .calendar td.day.advent.today a { color: #000; }
 
 .calendar td.day.advent.missing,
-.calendar td.day.missing#dec-25,
-.calendar td.day.missing#dec-26 {
+.calendar td.day.missing#dec-25
+{
   background: #000;
   color: #f00;
 }

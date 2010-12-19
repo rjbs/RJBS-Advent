@@ -24,7 +24,7 @@ x 15 - HTML::Widget::Factory
 x 16 - Role::Subsystem
 x 17 - Global::Context
 x 18 - delicious-backup
-  19 - Sub::Exporter::GlobExporter
+x 19 - Sub::Exporter::GlobExporter
 x 20 - (albumen)
   21 - Test::Routine
   22 - DBIx::Locker
