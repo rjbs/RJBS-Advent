@@ -1,0 +1,333 @@
+Title:   Exporting Globs for Fun and Profit
+Package: Sub::Exporter::GlobExporter
+
+=head1 What's a glob?
+
+A glob (or typeglob) is a kind of scalar in Perl.  It is a weird, pretty
+horrible thing.  There really isn't any need for them in Perl 5, but instead of
+being jettisoned, typeglobs were enshrined in the construction of packages and
+classes.  Anyway, that doesn't really explain what a glob is.
+
+A glob is a scalar that may contain a reference to one variable of each type:
+scalar, array, hash, code, I/O handle, and format.  In Perl, packages (and
+therefore classes) are just hashes with identifiers as keys and globs as
+values.  So, given the following program:
+
+  #!perl
+  package main; # we would have been in "main" anyway, but let's be explicit
+  use 5.12.0;
+
+  our $x = 1;
+  our @x = qw(foo bar baz);
+
+  sub x { say "I'm in a glob!" }
+
+This program sets up a typeglob in C<< $main::{x} >> with references to a
+scalar, a hash, and code so that we can get the following results in the
+debugger:
+
+  #!code
+    DB<1> x $main::{x}
+  0  *main::x
+
+We've got a glob there, just as we said.
+
+  #!code
+    DB<2> x *{ $main::{x} }
+  0  *main::x
+
+The C<*> isn't a dereference, because we don't have a glob reference.  It just
+means we want to use it I<as> a glob.
+
+  #!code
+    DB<3> x ${ $main::{x} }
+  0  1
+    DB<4> x @{ $main::{x} }
+  0  'foo'
+  1  'bar'
+  2  'baz'
+
+We can dereference the glob as a scalar or array (or anything else) to
+dereference the scalar or array (or whatever) in the slot for that type in the
+glob.  We can also access those slots as if the glob was a hash; if we do that,
+we see the reference itself:
+
+  #!code
+    DB<5> x *{ $main::{x} }{ARRAY}
+  0  ARRAY(0x1008ad4d8)
+     0  'foo'
+     1  'bar'
+     2  'baz'
+    DB<6> x *{ $main::{x} }{SCALAR}
+  0  SCALAR(0x100829658)
+     -> 1
+    DB<7> x *{ $main::{x} }{CODE}
+  0  CODE(0x10083b518)
+     -> &main::x in -:7-7
+    DB<8> x *{ $main::{x} }{CODE}->()
+  I'm in a glob!
+  0  1
+
+It gets weirder, though.  When we said C<< *$x >> above, we said we weren't
+dereferencing, because there was no reference.  What if there is?
+
+  #!perl
+  use strict;
+
+  our $x = "This is X!";
+  
+  our $y = \*x;
+
+Then, in the debugger...
+
+  #!code
+    DB<1> x $x
+  0  'This is X!'
+
+    DB<2> x *x
+  0  *main::x
+
+    DB<3> x ${ *x }
+  0  'This is X!'
+
+    DB<4> p ref $y
+  GLOB
+
+None of this is very surprising, so far.  What do we do to get the string out
+of C<$y>, though?  Well, C<$y> is a GLOB ref, and a GLOB is a kind of scalar,
+so we can dereference it with a dollar sign:
+
+  #!code
+    DB<7> x $y
+  0  GLOB(0x1008297a8)
+     -> *main::x
+    DB<8> x $$y
+  0  *main::x
+
+...and if you want to get at the string, we know we can scalar-dereference a
+glob to get its scalar entry:
+
+  #!code
+    DB<11> x $$$y
+  0  'This is X!'
+
+And just to make sure there are more ways to do it, we can use a C<*> instead
+of a C<$> for some of these dereferences.
+
+  #!code
+    DB<15> x $y
+  0  GLOB(0x1008297a8)
+     -> *main::x
+    DB<16> x *$y
+  0  *main::x
+    DB<17> x *{$y}{SCALAR}
+  0  SCALAR(0x100829700)
+     -> 'This is X!'
+    DB<21> x ${ *$y }
+
+...and that all makes sense.  Then there's:
+
+  #!code
+  0  'This is X!'
+    DB<22> x $*$y
+  $* is no longer supported at (eval 26)
+    [/Users/rjbs/perl5/perlbrew/perls/perl-5.12.2/lib/5.12.2/perl5db.pl:638] line 2.
+
+Oh.  Right, because there used to be a C<$*> magic variable, we need to be
+clearer about our line noise:
+
+  #!code
+    DB<23> x ${ *$y }
+  0  'This is X!'
+
+=head2 That Looks Really Dumb
+
+Well, it is -- and the above is really just the goofy syntax around globs.  In
+case you're wondering: yes, they I<do> have goofy semantics as well.  So, why
+would you ever go out of your way to deal with globs?
+
+There are basically two reasons.  The first is simple: you install subroutines
+in packages at runtime by putting code into globs.  L<I wrote about
+this|http://advent.rjbs.manxome.org/2009/2009-12-01.html> last year.  This is
+how L<Sub::Exporter> and L<Exporter> work.
+
+The other reason is more complicated.  Globs in symbol tables are public,
+globally shared variables, so you can use them to share a variable everywhere.
+For example:
+
+  #!perl
+  *Target::variable = \$Source::variable;
+
+This makes C<$variable> in C<Target> an alias to C<$variable> in C<$source>.
+
+You could do pretty easily with a reference, though:
+
+  #!perl
+  package Christmas;
+
+  sub wishlist {
+    state %wishlist;
+
+    return \%wishlist;
+  }
+
+...and then anywhere else in the program:
+
+  #!perl
+  Christmas->wishlist->{ $person } //= [ ... ];
+
+That gets us a shared variable with much tighter control over the interface
+than just a global variable name.  So why would we do it with globs?  There's
+one really good reason:  I<localization>.  If we don't just alias one part of
+the glob (like we aliased the scalar part above), but assign the whole glob,
+then we can use Perl's C<L<local|perlfunc/local>> keyword to localize values
+within a dynamic scope.
+
+Dynamic scope lets you save the value of a global variable and overwrite it,
+and when you exit the current block the old value is restored.  The usual (and
+excellent) document explaining scoping in Perl, including C<local>, is Mark
+Jason Dominus's L<Coping with
+Scoping|http://perl.plover.com/FAQs/Namespaces.html>.  If you're not clear on
+what dynamic scoping is, you should read it.
+
+If you I<are> clear, then what you need to know is that if you localize an
+imported variable, but you didn't import the whole glob, other things that
+imported that variable I<will not see your changes>.  Let that sink in.
+
+Here's an example of how importing variables can make localization fail:
+
+  #!perl
+  {
+    package Source;
+    our $variable = 10;
+    BEGIN {
+      *User_1::variable = \$Source::variable;
+      *User_2::variable = \$Source::variable;
+    }
+  }
+
+  { package User_1; sub var { $variable } }
+
+  {
+    package User_2;
+
+    say $variable;   # 10, as expected
+    say User_1->var; # 10, as expected
+
+    local $variable = 20;
+
+    say $variable;   # 20, as expected
+    say User_1->var; # 10, no good!
+  }
+
+Because we only imported the scalar part of C<< *Source::variable >>, it isn't
+localized the way we might expect.  If we replace the C<$> on lines 5 and 6
+with C<*> then the final two C<say> statements will both print 20.
+
+=head2 I Never Want to Think About This Again!
+
+This isn't the kind of thing you need to think about very often, and once
+you've been forced to think about it enough, you might realize that you don't
+want to think about it again.  One way to do that is to never have shared,
+localized variables.  That's kind of a bummer, because it's a useful thing to
+do.  Another tactic would be to always use fully-qualified variable names to
+localize them.  That's a bummer, too, because local names are both easier to
+type and a layer of indirection in front of the real variable.  That is:  if
+you only use your package's C<$variable>, and later you want to make it point
+to C<$Other::variable> instead of C<$Source::variable>, it's only one line to
+update.  If you had to type out C<$Source::variable> each time, it's a much
+hairier problem.
+
+So, this is a fairly esoteric problem that isn't encountered very often -- but
+it came up in the construction of two libraries mentioned earlier in this
+advent calendar:
+L<Log::Dispatchouli::Global|http://advent.rjbs.manxome.org/2010/2010-12-01.html>
+and L<Global::Context|http://advent.rjbs.manxome.org/2010/2010-12-17.html>.  To
+avoid thinking about the grotty details of the problem, I built a library
+abstract the idea of a exported, shared glob.
+
+=head1 Sub::Exporter::GlobExporter
+
+Finally, today's actual code!
+
+Here's the Sub::Exporter setup for Global::Context, which exports a shared
+global:
+
+  #!perl
+  use Sub::Exporter -setup => {
+    exports    => [
+      ctx_init => \'_build_ctx_init',
+      ctx_push => \'_build_ctx_push',
+    ],
+    collectors => {
+      '$Context' => Sub::Exporter::GlobExporter::glob_exporter(
+        Context => \'common_globref',
+      )
+    },
+  };
+
+C<ctx_init> and C<ctx_push> are set up like plain old exports that you might
+see in any other use of Sub::Exporter.  It's C<$Context> that's more
+interesting.  Because it doesn't just export a subroutine, it has to be a
+"collector," which is Sub::Exporter jargon for "some weird hunk of behavior."
+When someone uses C<$Context> in their import statement, like this:
+
+  #!perl
+  use Global::Context '$Context';
+
+...then the C<glob_exporter> routine kicks in.  It's been passed two arguments.
+One is the name under which to install the exported glob.  We used C<Context>,
+so it will be installed in C<*Context>.  The other is a reference to a name of
+a method that will return the globref to install.  In other words, the above
+import will result something like this happening:
+
+  #!perl
+  my $globref = Global::Context->common_globref;
+  
+  *Importer::Context = *$globref;
+
+If we wanted, we could have done this:
+
+  #!perl
+  use Global::Context '$Context' => { -as => 'ctx' };
+
+  # ...which would have meant:
+
+  my $globref = Global::Context->common_globref;
+  *Importer::ctx = *$globref;
+
+That's how we can pick a different name in our package for a global that goes
+by another name elsewhere.  This isn't the big benefit, though.  The big
+benefit is that because C<common_globref> is a I<method>, subclasses of
+Global::Context can provide a different globref.  We could have two different
+global contexts that would never interfere with one another by writing the
+following code:
+
+  #!perl
+  {
+    package Context::Alpha;
+    use parent 'Global::Context';
+    sub common_globref { \*Context }
+  }
+
+  {
+    package Context::Bravo;
+    use parent 'Global::Context';
+    sub common_globref { \*Context }
+  }
+
+  use Context::Alpha '$Context' => { -as => 'ctx_a' };
+  use Context::Bravo '$Context' => { -as => 'ctx_b' };
+
+We'd end up with C<$ctx_a> and C<$ctx_b>, both properly shared with other
+things using the Alpha or Bravo contexts, and neither interfering.  In other
+words, by using C<glob_exporter>, we write libraries that use global variables
+but less strictly limited in terms of reuse.
+
+=head1 See Also
+
+=for :list
+* L<Sub::Exporter::GlobExporter>
+* L<Sub::Exporter> - the core exporter that the glob exporter builds on
+* L<Log::Dispatchouli::Global> - this uses the glob exporter!
+* L<Global::Context> - so does this!
