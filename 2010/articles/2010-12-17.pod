@@ -190,3 +190,4 @@ seen again, or it will stick and simplify large amounts of our code.
 
 =for :list
 * L<Global::Context>
+* L<Bread::Board> - an IOC framework, if you want to avoid the globals
