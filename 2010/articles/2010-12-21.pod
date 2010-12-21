@@ -1,0 +1,222 @@
+Title:   Testing with Classes, Roles, and Antlers
+Package: Test::Routine
+
+=head1 Reuse, reuse, reuse
+
+Sometimes, I hear the advice that it's okay to write absolutely horrible,
+terrible, copy and paste code in your tests, because hey, they're just tests.
+I would like, tentatively, to call that bad advice.
+
+There's definitely wisdom in the idea that you don't usually want to spend all
+your time building elegantly constructed test suites when you're still trying
+to get your start-up off the ground.  Getting working code out the door is a
+laudable goal, but it has to be balanced against your ability to get I<more>
+working code out the door I<later>, and that means that every part of your
+project needs to be maintainable.
+
+L<Extreme Programming|http://en.wikipedia.org/wiki/Extreme_Programming> exhorts
+us to L<refactor
+mercilessly|http://www.extremeprogramming.org/rules/refactor.html>, and if
+we're going to accept that advice (as I think we should) then we need to write
+code that's planning to be refactored later.  That means that as often as
+possible we should even our sloppy testing code into units that are at least
+sort of suitable for refactoring.  At the start that might just mean putting
+C<sub{}> around a bunch of code instead of copying it over and over.  Later,
+maybe it means putting that sub into a shared file instead of copying it
+between files.  These are the same tools we use when making our non-test code
+reusable and refactorable.
+
+Another technique we use all the time to make code easy to maintain, reuse, and
+extend is object orientation.  Classes are pretty good units of abstraction.
+Why don't we see them all that often in our tests, in Perl?  I think the basic
+reason is that it's too hard to get started writing our tests as classes.
+Object orientation in Perl has traditionally been a bit of a drag,
+object-oriented testing moreso.  You have to write a class, put it somewhere
+under F<./t/lib>, load it somewhere else, and do something to make it run.
+Since the class needs special facilities to be a test, you end up using some
+framework for writing test classes, and that's another class building system
+you need to learn.
+
+In the last few years, L<Moose|http://moose.perl.org/> has helped usher in a
+revolution in how we write OO code in Perl, giving us one class-building system
+that's good enough for just about everything.  Staring at some lousy tests and
+wishing for a good way to write reusable object oriented test code, I realized
+that Moose was probably good enough for writing tests, too.  I ran with the
+idea and produced Test::Routine.
+
+=head1 The Simplest Test That Could Possibly Work
+
+To give you an example of how easy it is to write an object-oriented test with
+Test::Routine, here's a trivial test without Test::Routine:
+
+  #!perl
+  use strict;
+  use warnings;
+  use Test::More;
+
+  subtest everything_is_okay => sub {
+    my $x = 100;
+    is($x, 100, "everything is okay");
+  };
+
+  done_testing;
+
+...and here it is, using Test::Routine:
+
+  #!perl
+  use Test::Routine;
+  use Test::Routine::Util;
+  use Test::More;
+
+  test everything_is_okay => sub {
+    my $x = 100;
+    is($x, 100, "everything is okay");
+  };
+
+  test_me;
+  done_testing;
+
+So, we've added one line of code to go from an entirely imperative test to an
+object-oriented test.  Of course, you can't really tell, because we're not
+getting any benefit from it.  What if we did this, though:
+
+  #!perl
+  use Test::Routine;
+  use Test::Routine::Util;
+  use Test::More;
+
+  has x => (is => 'ro', isa => 'Int', default => 100);
+
+  test everything_is_okay => sub {
+    my $self = shift;
+    is($self->x, 100, "everything is okay");
+  };
+
+  test_me;
+  test_me({ x => 10 });
+  done_testing;
+
+Now we're getting somewhere!  We've given our test object an attribute, and we
+use that attribute in our tests, rather than a constant.  Then when we run
+C<test_me> twice, we're constructing two test objects and running their all
+their tests.  In other words, we'll run the C<everything_is_okay> test twice,
+once an object where C<x> is 10 (the default) and once where it is 11.
+
+We could also add methods to our tests and use those just like you'd expect:
+
+  #!perl
+  has x => (is => 'ro', isa => 'Int', default => 100);
+
+  sub is_square {
+    my ($self, $value) = @_;
+    return sqrt $value == int sqrt $value;
+  }
+
+  test everything_is_okay => sub {
+    my $self = shift;
+    is($self->x, 100, "everything is okay");
+
+    ok( $self->is_square($self->x), "x is square" );
+  };
+
+=head2 Combining Routines
+
+Something that I haven't mentioned yet is that when we use Test::Routine, it
+doesn't mean we're writing a class.  It means we're writing a I<role>.  That
+means we can write multiple routines and combine them.  Here are three packages
+we might write:
+
+F<t/lib/Factory/Gift.pm>:
+
+  #!perl
+  package t::lib::Factory::Gift;
+  use Moose::Role;
+
+  use Gift;
+
+  requires 'giver';
+
+  sub gift {
+    my ($self) = @_;
+
+    Gift->new({
+      from => $self->giver->name,
+      to   => 'Gift Recipient',
+      value => rand( $self->giver->budget ),
+    });
+  }
+
+F<t/lib/Routine/Giver.pm>:
+
+  #!perl
+  use Test::Routine;
+  use Test::Tolerant;
+
+  requires 'build_giver';
+
+  has giver => (
+    is   => 'ro',
+    does => 'Gift::Giver',
+    builder => 'build_giver',
+  );
+
+  test giver_is_acceptable => sub {
+    my ($self) = @_;
+    my $giver = $self->giver;
+
+    is_tol($giver->budget, [ qw(5 or_more) ], "giver is not cheapskate");
+
+    ok( $giver->celebrates_christmas, "humbugs need not apply" );
+  };
+
+F<t/basic.t>:
+
+  #!perl
+  use Test::Routine;
+  use Test::Routine::Util;
+  use Test::More;
+
+  sub build_giver {
+    Gift::Giver->new({
+      name   => 'Scott Calvin',
+      budget => 100,
+      celebrates_christmas => 1,
+    });
+  }
+
+  with( 't::lib::Factory::Gift', 't::Routine::Giver' );
+
+  run_me;
+
+The test file that gets run by C<make test> is the last one, but you might
+notice that it doesn't actually have any tests in it!  It gets its tests from
+the other roles it composes -- namely, C<t::Routine::Giver>.  That role gives
+the test object a C<giver> attribute and sets up a test to make sure the giver
+is acceptable, but it doesn't set up a default.  Instead, it requires that the
+default be provided by a builder method implemented elsewhere.  We've
+implemented it in F<t/basic.t>.  
+
+We also compose C<t::lib::Factory::Gift>, which isn't even a Test::Routine
+role, but just a plain old Moose role.  If we add more tests later, they can
+use the factory's C<gift> method to get gifts built based on the fixture (the
+C<giver>) provided by the rest of the composed test.
+
+=head1 There's More Than One Way to Do It!
+
+I've shown two pretty extreme use cases of Test::Routine: using it for almost
+nothing, and using it for fairly complex composition.  One of the things that
+makes it such a useful library is that it can be used in lots of different ways
+not seen here.  It doesn't have many opinions on how it should be used, it's
+just a simple tool with lots of possible applications.
+
+Better yet, it's not much more than plain old Moose roles, with all the same
+rules in play.  The extra bit of code that makes Test::Routine roles testable
+is very small and easy to understand.  You can start by writing test files that
+look almost exactly like what you're doing now, but later, when you want to
+refactor or update your tests, you'll have far more options available to do it.
+
+=head1 See Also
+
+=for :list
+* L<Test::Routine>
+* L<more on Test::Routine|http://rjbs.manxome.org/rubric/entry/1858>
