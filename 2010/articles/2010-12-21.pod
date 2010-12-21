@@ -100,7 +100,7 @@ Now we're getting somewhere!  We've given our test object an attribute, and we
 use that attribute in our tests, rather than a constant.  Then when we run
 C<test_me> twice, we're constructing two test objects and running their all
 their tests.  In other words, we'll run the C<everything_is_okay> test twice,
-once an object where C<x> is 10 (the default) and once where it is 11.
+once an object where C<x> is 100 (the default) and once where it is 10.
 
 We could also add methods to our tests and use those just like you'd expect:
 
