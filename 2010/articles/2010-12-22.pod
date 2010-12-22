@@ -1,0 +1,182 @@
+Title:   A Lousy Locker (...because Worse is Better!)
+Package: DBIx::Locker
+
+=head1 Optimizing for Failure
+
+A long, long time ago, we had some services that ran only on one server.  This
+was fine, because they produced minimal load and we never needed to scale up
+their volume.  This was terrible, because it meant that if that server went
+down, all those services stopped.  Even though the load was very low, we had to
+run redundant servers to avoid having single points of failure.  We found
+ourselves doing this over and over as we identified more weird old pieces of
+architecture that worked this way.
+
+When you take a job that you know can only run one at a time and make it
+redundant, you need to be really careful about race conditions and other kinds
+of contention.  For example, say you're going to send out digests of mailing
+lists, and you're going to do it something like this:
+
+  #!perl
+  my $lists = MLM::List->get_iterator;
+
+  while (my $mailing_list = $lists->next) {
+    my @undigested_messages = $list->messages->search({
+      has_been_digested => 0,
+    });
+
+    my $digest = $list->build_digest( @undigested_messages );
+
+    $digest->sent;
+
+    $_->mark_digested for @undigested_messages;
+  }
+
+This is pretty reasonable, as long as it's only running once, in one place.
+Once we've got it running in two places at once, there's the possibility that
+the two services hit the same list at the same time, or nearly the same time,
+and each send out a digest -- maybe identical, or maybe not.  The pattern that
+had been used to block this sort of condition in some places in the code base
+had been to get a L<MySQL
+lock|http://dev.mysql.com/doc/refman/5.0/en/miscellaneous-functions.html#function_get-lock>:
+
+  #!perl
+  my $lists = MLM::List->get_iterator;
+
+  while (my $mailing_list = $lists->next) {
+    $DB->get_mysql_lock("digest " . $mailing_list->id);
+
+    my @undigested_messages = $list->messages->search({
+      has_been_digested => 0,
+    });
+
+    my $digest = $list->build_digest( @undigested_messages );
+
+    $digest->sent;
+
+    $_->mark_digested for @undigested_messages;
+
+    $DB->release_mysql_lock("digest " . $mailing_list->id);
+  }
+
+...and the C<get_mysql_lock> call would become a MySQL C<GET_LOCK> call, and so
+on.  Unfortunately, in quite a few situations, including the one above, this is
+not a useful locking strategy.  For one thing, in MySQL you can only hold one
+named lock at once, any accidental nesting of locks will be a catastrophe.
+More generally, native database locks usually associate with a database
+connection.  If the database handle dies during the execution of C<<
+$digest->build_digest >>, nothing will happen in reaction to that until we try
+to mark the posts digested in the database.  So, before we've even begun
+sending mail, another service elsewhere may begin work on this job -- because
+we've lost our lock.  Native database locks are only safe when the only changes
+that the service may affect are inside a transaction on the same connection as
+the lock.
+
+What this really means is that you should take advantage of that, and put all
+your units of work into correctly-sized transactions, and you should take
+advantage of the I<incredible> safety provided by database transactions.
+Sometimes, though, that's just a lot more work than you can afford to do.
+Sometimes you need a quick and dirty solution to contention, even in the face
+of unsafe code.  After all, you might not be able to prevent every problem with
+not-quite-transactional code, but at least you can ensure that it won't be run
+four times at once!
+
+=head1 The Simplest Test That Could Possibly Work
+
+What we needed, for dealing with these contentious services, was a simple
+network-visible semaphore that would say "I have locked C<X>; attempt no work
+there."  It had to be impossible to get a lock if someone else had a lock, and
+it had to be really cheap to add locks to exisiting code -- no significant
+rearchitecture could be required.  Everything else was secondary.  Lingering
+locks, for example, were not a big problem, we could purge them as needed.  We
+didn't want to worry about lock granularity (locking a whole resource or only
+part of it).  Either a resource was locked, or not.
+
+The solution was dead simple.  We made this table:
+
+  #!vim sql
+  CREATE TABLE semaphores (
+    id int PRIMARY KEY AUTO_INCREMENT,
+    lockstring varchar(128) UNIQUE,
+    created datetime NOT NULL,
+    expires datetime NOT NULL,
+    locked_by text NOT NULL
+  );
+
+To get a lock, you'd insert a row into the table.  If a row for that lockstring
+already existed, the unique constraint would prevent the insertion.  That's it!
+It's almost ridiculously simple, but it works:
+
+  #!perl
+  my $locker = MLM::Locker;
+
+  my $lists = MLM::List->get_iterator;
+
+  while (my $mailing_list = $lists->next) {
+    my $lock = $locker->lock("digest " . $mailing_list->id);
+
+    my @undigested_messages = $list->messages->search({
+      has_been_digested => 0,
+    });
+
+    my $digest = $list->build_digest( @undigested_messages );
+
+    $digest->sent;
+
+    $_->mark_digested for @undigested_messages;
+  }
+
+We don't even need to clear the lock.  It will be automatically released when
+we finish marking messages digested and C<$lock> goes out of scope:
+
+  #!perl
+  sub DESTROY {
+    my ($self) = @_;
+    local $@;
+    return unless $self->locked_by->{pid} == $$;
+    $self->unlock;
+  }
+
+  sub unlock {
+    my ($self) = @_;
+
+    my $dbh   = $self->locker->dbh;
+    my $table = $self->locker->table;
+
+    my $rows = $dbh->do("DELETE FROM $table WHERE id=?", undef, $self->lock_id);
+
+    Carp::confess('error releasing lock') unless $rows == 1;
+  }
+
+In reality, we'd have some exception handling to deal with failure to lock, so
+that we could continue on gracefully to the next list.  That wouldn't cover
+every case, though.  What if we hit an entirely unexpected error after getting
+our lock, and perl exited without releasing the lock.  To take an extreme
+example, what if the server lost power?  If we'd been using a database lock
+that was tied to our database connection, everything would be fine: our
+connection's death would let the lock die, and the work would now be available
+to anyone.  The same thing would apply if we were using filesystem locks or,
+heaven help us, network filesystem locks.  The death of our client would
+release the lock.
+
+We don't have any concept of an active locking client, though.  That's part of
+the strength of the design: failure of one connection doesn't prevent an
+otherwise healthy service from continuing to work.  The trade off is that now,
+even though the server is dead, its lock it sitting there, preventing other
+services from picking up the work.  That's why every lock has an expiration
+time.  Every once in a while a cron job runs and just deletes expired locks.
+
+This means that sometimes resources are locked for quite a lot longer than they
+should be.  Sometimes seconds, sometimes minutes, or even an hour.  That's
+okay, because we knew that could happen going in, we planned for it, and I<we
+don't care>.
+
+L<DBIx::Locker> is a really crude tool that is often exactly the wrong thing
+for the job -- but sometimes it's not.  Sometimes the right tool is a big, dumb
+hammer.  Part of the challenge (and fun) of writing reasonable systems is
+knowing when a big, dumb hammer is good enough, and knowing when you need
+something better.
+
+=head1 See Also
+
+=for :list
+* L<DBIx::Locker>
