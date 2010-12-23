@@ -1,0 +1,254 @@
+Title:   Rolling Your Own Composition
+Package: MooseX::ComposedBehavior
+
+=head1 Beyond Method Modifiers
+
+Moose offers a few different kinds of L<method
+modifier|Moose::Manual::MethodModifiers>, or "advice."  They are before, after,
+and around.  (There's also "augment" and "override," which are only sorta kinda
+method modifiers.)  Advice lets you change the behavior of classes in very
+useful ways, and you can put advice in roles.  The problem is that it is often
+more limited than you might think.
+
+For example, subclasses of classes with advice can entirely clobber the advice
+applied to the superclasses' methods.  Methods that collect output from
+multiple pieces of advice are a bit painful to write.  C<augment> solves that
+fairly well, but can't be used in roles, greatly limiting that behavior's
+usefulness.  I wanted to write methods in which all the roles in a class could
+contribute behavior -- but subclasses-clobber-advice, combined with
+no-augment-in-roles made this a really annoying problem.
+
+Sure, it could all be done with C<around> modifiers, or by doing a lot of
+crawling of the meta objects, but that would be really annoying to implement
+over and over, and would be pretty confusing to skim.  I wanted to write a
+library that made the I<pattern> simple to use, not to just solve my current
+problem once.
+
+This calls for specific example.
+
+=head2 Tags
+
+A very simple example is tagging.  We want our objects to have a C<tags> method
+that returns a list of tags or keywords that apply to an object, and any roll
+or subclass can add more without affecting the tags added by anyone else.
+
+  #!perl
+  {
+    package Role::Gratis;
+    use Moose::Role;
+
+    add_tags { qw(free zero-cost) };
+  }
+
+  {
+    package Role::GiftWrapped;
+    use Moose::Role;
+
+    add_tags { qw(wrapped brown-paper) };
+  }
+
+  {
+    package Gift;
+    use Moose;
+    with('Role::Gratis', 'Role::GiftWrapped');
+
+    add_tags { qw(gift present) };
+  }
+
+  {
+    package Gift::Christmas;
+    use Moose;
+    extends 'Gift';
+
+    add_tags { qw(christmas yule) };
+  }
+
+With this class, we'd expect this:
+
+  #!perl
+  Gift::Christmas->new->tags;
+  # return: free, zero-cost, wrapped, brown-paper, gift, present, christmas, yule
+
+We can't just use C<sub> in classes and C<around> in the roles, because the
+subroutine in Gift::Christmas would blow away the advice applied in Gift.  We
+can't just use around everywhere, because if we tried to apply Role::Gratis to
+a class without a C<tags> method, we'd get an error.  We can't even do a silly
+"provide an empty C<tags> method" trick, because Role::Wrapped would have to do
+it, too, and they would conflict.  (If none of this is clear, consider reading
+about L<roles, advice, and BUILD in
+Moose|http://rjbs.manxome.org/rubric/entry/1864>.)
+
+Instead, we can use MooseX::ComposedBehavior to make that C<add_tags> thing
+above actually do just what we want.  First, we write a TagProvider library:
+
+  #!perl
+  package TagProvider;
+  use List::MoreUtils qw(uniq);
+
+  use MooseX::ComposedBehavior -compose => {
+    sugar_name   => 'add_tags',
+    context      => 'list',
+    compositor   => sub {
+      my ($self, $results) = @_;
+      return uniq map { @$_ } @$results if wantarray;
+    },
+    method_name  => 'tags',
+  };
+
+Then, we add C<< use TagProvider >> to each of the classes.  That's it!
+C<add_tags> will exist, adding more things to the list of stuff to return.
+When the C<tags> method is called (notice it named by the C<method_name>
+parameter, above) it calls all the C<add_tags> blocks and uses the
+C<compositor> to combine them.  Here, the compositor just makes a big set of
+all the tags returned by every unit of composition -- roles and classes alike.
+There's no need to worry about overriding or clobbering anything.
+
+=head2 Event Handling
+
+We've been working one some code that generates and responds to events.  When
+an object does the HandlesEvents role, it will have a registry of event names,
+and each name will have a bunch of handlers, also registered by name.  So, we
+might have a registry like this:
+
+  #!perl
+  $registry = {
+    got_signal => {
+      log_signal   => sub { ... },
+      die_horribly => sub { ... },
+    }
+  };
+
+When an object with that registry get a C<got_signal> event, it calls each of
+the event handlers.
+
+A lot of these handlers are going to be really common.  For example, every
+object should be able to respond to a heartbeat event, even if only to respond
+by making note of it.  We want to be able to put implicit event handlers on
+roles, so that when we compose together actual objects, they start off with
+all the event handlers that they should.  For example, we might write these two
+packages:
+
+  #!perl
+  {
+    package HandlesEvents;
+    use Moose::Role;
+
+    implicit_event_handlers {
+      return {
+        heartbeat => { inc_last_beat => sub { ... } }
+      };
+    };
+  }
+
+  {
+    package Accruer;
+    use Moose::Role;
+    with 'HandlesEvents';
+
+    implicit_event_handlers {
+      return {
+        heartbeat => {
+          accrue_value => sub {
+            my $self = shift;
+            $self->value( $self->value * 1.01 );
+          }
+        }
+      };
+    };
+  }
+
+  {
+    package Historian;
+    use Moose;
+    with 'HandlesEvents';
+
+    implicit_event_handlers {
+      return {
+        log_message => { write_log => sub { ... } }
+      };
+    };
+  }
+
+Then, say we produce this class:
+
+  #!perl
+  package Historian::Profitable;
+  use Moose;
+  extends 'Historian';
+
+  with 'Accrurer';
+
+It will have the following set of handlers implicitly:
+
+  #!perl
+  {
+    log_message => { write_log => sub { ... } },
+    heartbeat   => {
+      inc_last_beat => sub { ... },
+      accrue_value  => sub { ... },
+    },
+  }
+
+If there's ever a conflicting set of entries, we should throw an exception.
+This turns out to be easy with MooseX::ComposedBehavior, too.  We just write a
+ImplicitEventHandlers package and use it in all the packages above.  This is
+what goes in it:
+
+  #!perl
+  use MooseX::ComposedBehavior -compose => {
+    method_name  => 'composed_implicit_event_handlers',
+    sugar_name   => 'implicit_event_handlers',
+    context      => 'scalar',
+    compositor   => sub {
+      my ($self, $results) = @_;
+      my %composed;
+
+      # Each result is a HOH; first keys, event names; second keys, handler
+      # names
+      for my $result (@$results) {
+        for my $event_name (keys %$result) {
+          my $this_event = ($composed{ $event_name } ||= {});
+
+          for my $handler_name (keys %{ $result->{$event_name} }) {
+            if (exists $this_event->{$handler_name}) {
+              Throwable::X->throw({
+                ident   => "implicit handler composition conflict",
+                payload => {
+                  handler_name => $handler_name,
+                  event_name   => $event_name,
+                },
+              });
+            }
+
+            $this_event->{$handler_name} = $result->{$event_name}{$handler_name};
+          }
+        }
+      }
+
+      return \%composed;
+    },
+  };
+
+When we want to know an object's composed event handlers, we just call its
+C<composed_implicit_event_handlers> method.  We can even make that method a
+builder for a lazy attribute, if we want to avoid recalculating.
+
+=head1 Wacky New Composition is a Strategy of Last Resort
+
+Building new ways of combining methods across compositional structures is
+neat.  It solves a number of problems that might be hard to solve without it,
+and it's a very shiny little tool.  It's also I<weird>.  Code that does this
+becomes harder to skim, and harder to explain, and more tied to a wonky library
+implemented in a L<clever but unfortunate
+way|https://github.com/rjbs/moosex-composedbehavior/blob/44532ab8503c5c414d4ac02f7c705bfdf89f839f/lib/MooseX/ComposedBehavior.pm>.
+
+The existing tools for re-use provided by Moose are very powerful, and can
+address a huge array of problems.  MooseX::ComposedBehavior is useful only when
+you're quite sure that you've exhausted simple-enough solutions wiht Moose.
+
+=head1 See Also
+
+=for :list
+* L<MooseX::ComposedBehavior>
+* L<roles, advice, and BUILD in Moose|http://rjbs.manxome.org/rubric/entry/1864> - an introductory blog post about why composed behavior can be confusing
+* L<composing your own behavior across Moose class structures|http://rjbs.manxome.org/rubric/entry/1865> - a more detailed follow-up about MooseX::ComposedBehavior
