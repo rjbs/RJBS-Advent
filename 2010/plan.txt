@@ -27,7 +27,7 @@ x 18 - delicious-backup
 x 19 - Sub::Exporter::GlobExporter
 x 20 - (albumen)
 x 21 - Test::Routine
-  22 - DBIx::Locker
+x 22 - DBIx::Locker
   23 - MooseX::ComposedBehavior 
   24 - MRO::Magic
   25 - *
