@@ -73,9 +73,9 @@ We can't just use C<sub> in classes and C<around> in the roles, because the
 subroutine in Gift::Christmas would blow away the advice applied in Gift.  We
 can't just use around everywhere, because if we tried to apply Role::Gratis to
 a class without a C<tags> method, we'd get an error.  We can't even do a silly
-"provide an empty C<tags> method" trick, because Role::Wrapped would have to do
-it, too, and they would conflict.  (If none of this is clear, consider reading
-about L<roles, advice, and BUILD in
+"provide an empty C<tags> method" trick, because Role::GiftWrapped would have
+to do it, too, and they would conflict.  (If none of this is clear, consider
+reading about L<roles, advice, and BUILD in
 Moose|http://rjbs.manxome.org/rubric/entry/1864>.)
 
 Instead, we can use MooseX::ComposedBehavior to make that C<add_tags> thing
