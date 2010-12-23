@@ -1,0 +1,118 @@
+Title:   Rolling Your Own Method Dispatch
+Package: MRO::Magic
+
+=head2 EXPERIMENTAL CODE AHEAD
+
+L<Last week|2010-12-17.html>, I wrote about the dangerously experimental
+Global::Context.  This week, I'll be talking about the transcendentally
+experimental MRO::Magic.
+
+=head1 Merry Christmas!  Perl sucks!
+
+Lately, just a little more than usual, we've been talking at work about the
+reasons that Perl sucks.  That's not because we think that it's a terrible
+language, or that it's a mistake to use it, or that we don't like it.  Let's
+face it, though: all programming languages suck.  Sometimes, they suck in
+subtle and interest ways, and sometimes they're just absolute stinkers.  Most
+languages that I've dealt with have some big problems and some little problems,
+and learning about them all is lots of fun.
+
+For a good long while now, I've been feeling pretty strongly that one of Perl's
+biggest failings, within its own design aesthetic, is that you can't write
+per-instance methods.  That is, whenever you write C<< $thing->method >>, the
+method is resolved entirely based on the package associated with C<$thing>
+(well, or via C<UNIVERSAL>).  Either C<$thing> is a package name or it is a
+reference associated with ("blessed into") a package name.  When you call the
+C<method> on it, something like the following happens:
+
+=for :list
+1. if there's a subroutine named C<method> in the package, call it
+2. otherwise, check all the packages listed in this package's C<@INC>, recursing through their C<@INC>s too
+3. otherwise check in C<UNIVERSAL>
+4. otherwise, try to call any relevant C<AUTOLOAD> (via the search path described in 1-3)
+5. otherwise, throw an exception
+
+So, imagine you had a C<Christmas::Present> class, and you wanted to make an
+instance of it that would be fatal to open before December 25.  You I<can't> do
+something like this:
+
+  #!perl
+  my $present = Christmas::Present->new({
+    to   => $impatient_relative,
+    from => $self,
+  });
+
+  $present->ADD_METHOD(open => sub {
+    my ($self) = @_;
+    
+    die "It isn't Christmas yet!" unless time >= 1293256800;
+
+    $self->SUPER::open;
+  });
+
+For one thing, C<ADD_METHOD> doesn't exist.  Then there's the fact that
+C<SUPER> is incredibly tightly bound to packages.  To make this work, we need
+to do something like:
+
+  #!perl
+  {
+    package Christmas::Present::FatalToPeekers;
+    use base 'Christmas::Present';
+
+    sub open {
+      my ($self) = @_;
+      
+      die "It isn't Christmas yet!" unless time >= 1293256800;
+
+      $self->SUPER::open;
+    });
+  }
+
+  my $present = Christmas::Present::FatalToPeekers->new({
+    to   => $impatient_relative,
+    from => $self,
+  });
+
+This works reasonably well, but only if we know, when writing our code, all the
+permutations of behavior we might need, so we can make explicit classes.  This
+isn't always acceptable; sometimes we need special behavior to be figured out
+at runtime, which means we need to do something like this:
+
+  #!perl
+  my $i    = 0;
+  my $base = 'Anonymous::Class';
+
+  sub ADD_METHOD {
+    my ($object, $name, $code) = @_;
+
+    my $new_package_name = join q{::}, $base, $i++;
+    {
+      no strict refs;
+      @{ $new_package_name . '::ISA' }   = (ref $object);
+      *{ $new_package_name . "::$name" } = $code;
+    }
+
+    bless $object => $new_package_name;
+  }
+
+..and that means that we end up with a bunch of horribly-named packages being
+populated, potentially forming weird, long chains of inheritance.  Because
+packages are not garbage collected, these weird-o packages will stick around in
+memory long after the only instances blessed into them are gone.  Some
+metaprogramming frameworks (like Moose, to name the most important example)
+build abstractions over this so that you can forget about the horrible crap
+going on behind the scenes.  Furthermore, you can't call C<< ->SUPER::method >>
+in the C<$code> passed to C<ADD_METHOD>, because C<SUPER::> is broken.
+Instead, you need to use something like the L<SUPER> module to fix the problem
+-- another abstraction over a colossal hack.  When we abstract a colossal hack
+to fix a stupid language design issue, this is what is commonly called a
+"design pattern."
+
+=head2 Who cares?
+
+Well, 
+
+=head1 See Also
+
+=for :list
+* L<MRO::Magic>
