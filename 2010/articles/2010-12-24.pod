@@ -110,9 +110,217 @@ to fix a stupid language design issue, this is what is commonly called a
 
 =head2 Who cares?
 
-Well, 
+At first, this could seem like a really esoteric problem, only likely to bother
+people who are doing weird stuff at the edges of good behavior.  That's because
+Perl's object model is at least barely adequate for common use -- but it's not
+I<great> for common use, because of the "everything relates to the package"
+paradigm.
+
+For example, a very common implementation for objects in Perl is "blessed
+hashref."  This is convenient, because the object's attribute values can be
+stored in the hash.  Sometimes, though, people want to store class attributes,
+too.  There's not a clear place to put this state.  At first, you might want to
+put things in the package itself, in a package variable -- but then it would be
+visible in global scope, I<and> as subclasses added new attributes, the state
+associated with a class is scattered over more and more places, which is just
+frustrating.
+
+"Stop!" some purists cry!  "Classes shouldn't really have state!  They're just
+templates for instances!"
+
+That's true, but if it's true, then it's also true that they shouldn't have
+C<new> methods.  When you write a class, you need two things: a template for
+new objects and a handle for constructing them.  Perl doesn't provide a C<new>
+operator the way that some languages do.  Instead, we write C<new> method that
+get called on classes -- which are packages -- so that classes are acting both
+as classes and as factories, but (and this is the problematic part) using the
+same mechanism.  This is what leads to the age-old and always-annoying
+question:
+
+=for html <blockquote>
+
+What should we do if somebody calls C<new> on an object?
+
+=for html </blockquote>
+
+In an ideal world, instances and classes wouldn't share one namespace for
+methods, so calling a class method on an instance or an instance method on a
+class would have the same, obvious answer: an "unknown method" exception could
+be raised.
+
+If classes were instances (presumably of the notional class Class) then it
+would make plenty of sense to give them attributes, and it would be easy to
+dump them, because our classes wouldn't have to be packages identified by
+strings.  They could be blessed references with attribute state in their guts.
+
+=head2 Can't you just...
+
+Yes.  Of course.  You can get around the template/factory conflation by making
+two classes and having the "factory" class bless things into the "template"
+class.  This is somewhat clumsy, but it works... but it only solves this
+problem.  It doesn't help with the "per-instance methods."  In fact, it
+compounds that problem by doubling the number of classes that might get
+pseudo-anonymous subclasses generated at runtime and then forgotten about.
+Those classes might not be generated with the same name in future program runs
+using the same libraries, so object serialization tools won't always (ever?) be
+able to restore objects like this properly.  It's a big mess.
+
+=head1 Overloading the Arrow
+
+The solution I'd proposed to this quite some time ago was to make it possible
+to overload the method invocation arrow, so that when an instance method was
+called like this:
+
+  #!perl
+  $instance->some_method(@args);
+
+...and we had defined:
+
+  #!perl
+  package Class;
+
+  use overload 'method' => 'invoke_method';
+
+...then this would happen:
+
+  #!perl
+  Class->invoke_method($instance, "some_method", \@args);
+
+This never happened, mostly because nobody had my passion for the idea I<and>
+the necessary ability to add the feature to Perl.  Instead, Florian Ragwitz
+approached me with a number of strategies for implementing it, all of them
+quite excellent, and he and I have been playing with a real solution on and off
+for over a year now.  It's called L<MRO::Magic>.
+
+=head1 MRO::Magic in Action
+
+MRO::Magic's goal is to let you I<totally replace> what happen when a method is
+called via the arrow operator.  As a simple demonstration of it in action, this
+package implements L<classless OO|http://en.wikipedia.org/wiki/Prototype-based_programming>:
+
+  use strict;
+  use warnings;
+  package Classless::Root;
+
+  my %STATIC;
+  use MRO::Magic
+    passthru   => [ qw(import export DESTROY AUTOLOAD) ],
+    metamethod => sub {
+      my ($invocant, $method, $args) = @_;
+
+      unless (ref $invocant) {
+        die "no metaclass method $method on $invocant"
+          unless my $code = $STATIC{$method};
+
+        return $code->($invocant, @$args);
+      }
+
+      my $curr = $invocant;
+      while ($curr) {
+        return $curr->{$method}->($invocant, @$args) if exists $curr->{$method};
+        $curr = $curr->{parent};
+      }
+
+      my $class = ref $invocant;
+      die "unknown method $method called on $class object";
+    }
+  ;
+
+  # ...continued below...
+
+We use MRO::Magic and tell it that some methods -- primarily important internal
+Perl-recognized methods -- are passed through to be called normally via package
+entries.  That's the C<passthru> argument.
+
+The rest of the call sets up the code that's called when somebody calls a
+method, just as I described above.  If it was called on the class name (a
+"static" method, as some call it) then we look for an entry in C<%STATIC>.
+
+Otherwise, we assume that the object instance is a hashref, and we look for a
+named entry in the hash.  If we find one, that's the method and we call it.  If
+not, we look for a parent object in the C<parent> entry and start looking
+there.  In other words, this works almost exactly like JavaScript.  So, just
+like in JavaScript, we might want a basic universal parent object.  We just set
+it up like this:
+
+  #!perl
+  my $Object = {
+    get => sub {
+      my ($self, $attr) = @_;
+      my $curr = $self;
+      while ($curr) {
+        return $curr->{$attr} if exists $curr->{$attr};
+        $curr = $curr->{parent};
+      }
+      return undef;
+    },
+    set => sub {
+      my ($self, $attr, $value) = @_;
+      return $self->{$attr} = $value;
+    },
+    new_child => sub {
+      my ($parent, %attrs) = @_;
+      bless { %attrs, parent => $parent } => $class;
+    },
+    parent => undef,
+  };
+
+  bless $Object => __PACKAGE__;
+
+Then all we need is a static C<new> method so we can call C<<
+Classless::Root->new >>:
+
+  $STATIC{new} = sub {
+    my ($class, %attrs) = @_;
+
+    $Object->new_child(%attrs);
+  };
+
+=head2 Is this awesome?
+
+Yes, this is awesome.  In about fifty lines, we've implemented a pretty decent
+prototype based OO system that isn't really too shabby.  It won't be affected
+by C<UNIVERSAL> or C<AUTOLOAD> abuse.  It won't ever require polluting the
+global namespace with throwaway packages or code.
+
+Best of all, MRO::Magic isn't just a prototype based OO system, it's a toolkit
+for building your own OO systems with different tradeoffs than those made by
+the standard Perl OO toolkit.  With MRO::Magic, there's more than one way to do
+it.
+
+=head2 So why isn't everybody using it?
+
+Well, MRO::Magic isn't quite I<done> yet.  As Florian and I have looked at
+other ways to do this, we've found a number of places where perl's internals
+have gotten in the way.  Generally these relate to the way that the method
+resolution cache works.  It isn't quite fair to call them bugs, since they
+don't cause problems with any existing use of Perl, but they sure are weird.
+One implementation of MRO::Magic worked around these bugs by globally
+invalidating the entire method resolution cache every time a method was called.
+Obviously, that's pretty nuts.
+
+Beyond that, it will take a while to figure out just how to build a good
+MRO::Magic kit.  The Classless::Root example is a nice example, but it's
+kludgy, and would be hard to extend.  Things like passing through universal
+methods or extending the implementation of OO toolkits need to be seriously
+thought out, which is hard to do when the basics aren't quite usable.
+
+In the end, I think that if MRO::Magic become a viable way to write code,
+almost no one will use it.  Instead, a few alternate OO systems will be written
+using it, and people will use that.  I look forward to implementing a few of
+those myself, even if only for fun.  L<Data::Hive> sure could benefit from it,
+though, to eliminate its use of C<AUTOLOAD>.
+
+If you're going to play with MRO::Magic, I suggest you do so using the versions
+of code on GitHub, linked below, rather than the outdated release currently on
+CPAN.  Be warned, though: both are pretty broken, and you might want to ask on
+IRC what's supposed to work and what's known to be busted.
 
 =head1 See Also
 
 =for :list
-* L<MRO::Magic>
+* L<MRO::Magic> - on CPAN; slightly broken, extremely hacky
+* L<MRO::Magic|https://github.com/rjbs/mro-magic> - on Github; very broken, much less hacky
+* L<MRO::Define> - the basis of the CPAN version of MRO::Magic
+* L<Object::Anon|https://github.com/rafl/object-anon> - the basis of the current dev version of MRO::Magic
+* L<Class::Classless> - an earlier, C<AUTOLOAD>-based prototype OO system
