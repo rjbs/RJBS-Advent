@@ -271,6 +271,7 @@ it up like this:
 Then all we need is a static C<new> method so we can call C<<
 Classless::Root->new >>:
 
+  #!perl
   $STATIC{new} = sub {
     my ($class, %attrs) = @_;
 
