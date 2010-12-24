@@ -198,6 +198,7 @@ MRO::Magic's goal is to let you I<totally replace> what happen when a method is
 called via the arrow operator.  As a simple demonstration of it in action, this
 package implements L<classless OO|http://en.wikipedia.org/wiki/Prototype-based_programming>:
 
+  #!perl
   use strict;
   use warnings;
   package Classless::Root;
