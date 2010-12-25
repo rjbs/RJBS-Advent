@@ -29,8 +29,8 @@ x 20 - (albumen)
 x 21 - Test::Routine
 x 22 - DBIx::Locker
 x 23 - MooseX::ComposedBehavior 
-  24 - MRO::Magic
-  25 - *
+x 24 - MRO::Magic
+x 25 - *
 
 ___[ backups.txt ]___
 Querylet?
