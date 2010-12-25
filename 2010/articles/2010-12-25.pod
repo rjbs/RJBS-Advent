@@ -1,0 +1,53 @@
+Title:   Advent is over!  Go home!
+Package: CPAN
+
+=head1 Merry Christmas!
+
+It's Christmas day, folks!  Advent is over, and there is no new writing about
+code for you today.
+
+I had a lot of fun writing these articles this year.  It's helped me think
+about why (and whether!) the code I write is useful or usable.  Sometimes, I
+found that the code was too hard to explain, which led to improvements to the
+code.  That's a frequent side-benefit to writing about code.
+
+The side-benefit to writing the code itself is realizing all the ways that the
+code you've written up until now could have been better if you had been able to
+use the thing you're writing now in writing your old code.  Every time I have a
+new idea, or learn about someone else's great idea, I want to go back and
+rewrite all my old code to incorporate it.  Fortunately, I can usually resist
+that temptation.
+
+A number of articles this year have been about libraries that use frequently
+discouraged features:  global variables and dynamic scope, C<AUTOLOAD>,
+operator overloading, Moose's L<BETA|http://en.wikipedia.org/wiki/BETA>-style
+method augmentation, and probably other things I don't even realize I shouldn't
+have used.  Perl provides an excellent core language for a lot of general
+programming problems, but some problems become overcomplex to solve if you
+stick to the usually-recommended features.  By understanding just what all the
+weird tools do, and when to reach for one of the weird tools, you can avoid
+getting mired down trying to avoid features that somebody told you were "bad."
+
+The scariest weird tools are the ones you have to build yourself.  When you
+announce, "I'm thinking of writing a weird tool to solve a weird edge-case
+problem that is only 70% solved by existing tools," the answer you get is
+usually either "huh?" or "you aren't going to need it."  Sometimes you still
+get that when it's done, but sometimes you'll have the great joy of seeing
+people come to understand the problem you were having and how you solved it,
+and having those people think your idea makes sense.
+
+So my suggestion is this:  when you find yourself trying to solve a new
+problem, talk to everybody you can about it.  If nobody gives you a great
+solution, settle for great ideas.  If you can get one of those, settle for a
+decent idea.  Write about it and ask for feedback.  Even if you get a lot of
+blank stares, implement it anyway and then write about that.  You'll end up a
+better programmer for it, and the rest of the world might end up with useful
+code -- or at least an interesting post mortem report.
+
+=head1 See Also
+
+=for :list
+* L<CPAN>, L<App::cpanminus>, L<CPANPLUS>
+* L<ExtUtils::MakeMaker>, L<Module::Build>, L<Dist::Zilla>
+* L<Test::More>, L<TAP::Harness>
+* L<My Wishlist|http://www.amazon.com/wishlist/327IWB0NH2TTM>
