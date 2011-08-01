@@ -120,10 +120,10 @@ This kind of refactoring was so successful, with so many side benefits, that we
 worked to make it easy to perform over and over, by factoring out this
 "subsystem pattern" into a reusable library:  L<Role::Subsystem>.
 
-The you use it is simple.  First, you include Role::Subsystem in the class you
-want to be a subsystem, like our subscription manager; then you tell the main
-class how to get a subsystem object.  Our subscription manager class might look
-like this:
+The way you use it is simple.  First, you include Role::Subsystem in the class
+you want to be a subsystem, like our subscription manager; then you tell the
+main class how to get a subsystem object.  Our subscription manager class might
+look like this:
 
   #!perl
   package MLM::SubscriptionManager;
