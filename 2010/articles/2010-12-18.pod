@@ -31,10 +31,10 @@ manager, L<Rubric>.  To do that, I'd need my bookmarks in some kind of
 intermediate form.
 
 Fortunately, Delicious even then provided a good API for getting at your data,
-and L<Aaron Straup Cope|http://search.cpan.org/~ascope/> wrote a nice L<Perl
+and L<Aaron Straup Cope|https://metacpan.org/author/ASCOPE> wrote a nice L<Perl
 interface|Net::Delicious> to it.  It was pretty easy for me to write a
 stripped down version and a L<simple "dump my bookmarks"
-program|http://search.cpan.org/dist/delicious-backup/bin/delbackup>. 
+program|http://search.cpan.org/dist/delicious-backup/bin/delbackup>.
 
 =head2 Using F<delbackup>
 
@@ -57,16 +57,6 @@ you want, later.  C<-ns> dumps them into a HTML document, organized by tags.
 It's a Netscape bookmark file, so you can import it into nearly any web
 browser, but you'll end up with lots of weird duplicates because Delicious uses
 tags and the Netscape bookmarks format uses (virtual) folders.
-
-=head2 Problems Installing Net::Delicious?
-
-In version 1.13, Net::Delicious's F<Build.PL> used some features that basically
-nothing else ever did, and they're not well supported.  Under many common
-configurations, it just won't install normally.  I've just uploaded a new
-version, but if your CPAN mirror is extremely out of date, you can download
-L<my Net-Delicious
-tarball|http://www.cpan.org/authors/id/R/RJ/RJBS/Net-Delicious-1.14.tar.gz>
-directly.
 
 =head1 See Also
 

@@ -14,7 +14,7 @@ Well, I'm not here to tolerate other people's libraries.  The L<time for
 tolerance|http://advent.rjbs.manxome.org/2010/2010-12-05.html> is past.  I'm
 going to talk about I<my> favorite getopt library.  In what may be a first for
 the RJBS Advent Calendar, it's a library I didn't write.  It was written by my
-former co-worker L<Dieter|http://search.cpan.org/~hdp/>, and I remember very
+former co-worker L<Dieter|https://metacpan.org/author/HDP>, and I remember very
 clearly how happy I was when I started that the "which getopt?" question had
 not only been answered already, but had been answered with a library that I
 liked using.

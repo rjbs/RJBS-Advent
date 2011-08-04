@@ -67,7 +67,7 @@ If I want to learn more about a repository, it's easy:
 As time goes on, we can forwardport more ancient protocols into the future,
 making sure that the future is just as technologically advanced as the past!
 Imagine using L<Net::GitHub> and
-L<Gopher::Server|http://search.cpan.org/dist/Gopher-Server/> to create a Gopher
+L<Gopher::Server|https://metacpan.org/release/Gopher-Server> to create a Gopher
 interface to L<Github|http://github.com/>!  C<git push> via UUCP, or C<git
 clone> across telnet!  The future will be so bright that we'll have to wear
 Wayfarers.

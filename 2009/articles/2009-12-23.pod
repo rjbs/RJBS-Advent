@@ -60,7 +60,7 @@ same value, they'll get send to the fallback to break the tie:
 
 Sort::ByExample is not intended to be blazing fast, but it should be fairly
 efficient.  It also isn't L<the Swiss Army chainsaw of
-sorting|http://search.cpan.org/dist/Sort-Maker>.  I tried to use that at first
+sorting|https://metacpan.org/release/Sort-Maker>.  I tried to use that at first
 before giving up and writing this code.
 
 Sort::ByExample solves a pretty specific problem, and one that could always be
