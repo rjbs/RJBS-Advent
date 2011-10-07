@@ -145,8 +145,11 @@ pre {
 }
 
 .calendar td.day a:hover,
-.calendar td.day a:visited:hover {
-  background: #73a30a;
+.calendar td.day a:visited:hover,
+.calendar td.day.advent.today a:hover,
+.calendar td.day.advent.today a:visited:hover {
+  background: #009;
+  color: #fff;
 }
 
 .calendar td.day a:visited:after,
@@ -155,47 +158,23 @@ pre {
 }
 
 .calendar td.day.advent {
-  background: #156006;
+  background: #06c;
 }
 
 .calendar td.day.advent.today {
-  background: #aea;
+  background: #6cf;
 }
 
 .calendar td.day.advent.today a { color: #000; }
 
-.calendar td.day.advent.missing,
-.calendar td.day.missing#dec-25,
-.calendar td.day.missing#dec-26 {
+.calendar td.day.advent.missing {
   background: #000;
   color: #f00;
 }
 
 .calendar td.day.advent.future {
-  background: #660000;
+  background: #003;
   color: #fff;
-}
-.calendar td#dec-25 {
-  background: #f2e184;
-  color: #000;
-  font-weight: bold;
-}
-
-.calendar td#dec-25 a {
-  color: #000;
-}
-
-.calendar td#dec-25 a:hover {
-  background: #f2f7d4;
-}
-
-.calendar td#dec-26 a {
-  color: #000;
-  background: #B180A2;
-}
-
-.calendar td#dec-26 a:hover {
-  background: #5B4354;
 }
 
 #notes {
