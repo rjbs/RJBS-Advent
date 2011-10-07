@@ -1,6 +1,6 @@
 body {
   color: #000;
-  background-color: #73a30a;
+  background-color: #003366;
   font-family: verdana, tahoma, sans-serif;
 }
 
@@ -11,7 +11,7 @@ body {
   margin-right: auto;
   margin-top: 10px auto;
   margin-bottom: 10px;
-  background: #daf7d4;
+  background-color: #0066ff;
   border: 1px solid #aaa;
   -moz-border-radius: 10px;
   -webkit-border-radius: 10px;
@@ -28,12 +28,16 @@ h1 {
 h1.title {
   text-align: left;
   margin-bottom: 0;
-  color: #b00;
+  color: #036;
+}
+
+h1 a {
+  color: #fff;
 }
 
 h2 {
   text-align: center;
-  color: #b00;
+  color: #036;
 }
 
 .subtitle {
@@ -55,22 +59,22 @@ dt {
 
 #content {
   border: 1px solid #aaa;
-  background: #ffebff;
+  background: #fcffff;
 }
 
 #note {
-  background: #be000c;
+  background-color: #eee;
   border: 1px solid #575;
-  color: #fff;
+  color: #000;
 }
 
 .pod h1, .pod h2 {
   text-align: left;
-  color: #b00;
+  color: #036;
 }
 
 a {
-  color: #b00;
+  color: #036;
   text-decoration: none;
 }
 
@@ -84,7 +88,7 @@ a:not(.article) {
 #header a:hover,
 .pod    a:hover
 {
-  color: #d00;
+  color: #00f;
   background: #ffc;
   -moz-border-radius: 5px;
   -webkit-border-radius: 5px;
@@ -262,9 +266,9 @@ h2#See-Also {
 }
 
 .code-listing .line-numbers {
-  background-color: #73a30a;
-  color: #fff;
-  border-right: 2px #be000c solid;
+  background-color: #69f;
+  color: #000;
+  border-right: 2px #00f solid;
   width: 3.5em;
   text-align: right;
 }
@@ -275,7 +279,7 @@ h2#See-Also {
 
 .feed {
   float: right;
-  color: #ff0;
+  color: #39f;
   font-weight: bold;
   padding-right: 1em;
   vertical-align: middle;

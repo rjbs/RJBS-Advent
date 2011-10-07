@@ -3,6 +3,15 @@ Package: Pancake::Screaming
 
 =head1 Aaaaaaaaaaaaaaaaaugh!
 
+Help! Help!  This latke won't stop screaming!
+
+  #!perl
+  my $latke;
+
+  $latke->scream while 1;
+
+What can you do?
+
 =head1 See Also
 
 =for :list
