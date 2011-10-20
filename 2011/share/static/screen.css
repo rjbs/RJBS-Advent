@@ -131,7 +131,7 @@ pre {
 
 .calendar td.day {
   background: #aaa;
-  font-size: xx-large;
+  /*font-size: xx-large; */ /* <-- why doesn't that work nicely? */
 }
 
 .calendar td.day a {

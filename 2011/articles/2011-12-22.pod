@@ -1,9 +1,0 @@
-Title:   Light the First Candle
-Package: Pancake::Screaming
-
-=head1 Aaaaaaaaaaaaaaaaaugh!
-
-=head1 See Also
-
-=for :list
-* L<Snicket::Lemony>
