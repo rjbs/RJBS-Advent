@@ -1,5 +1,5 @@
-Title:   E-mail Made Simple
-Package: E'Mail::Acme
+Title: E-mail Made Simple
+Topic: E'Mail::Acme
 
 =head1 Okay, I Lied
 

@@ -1,5 +1,5 @@
-Title:   Like FUSE, but Stupider
-Package: Path::Resolver
+Title: Like FUSE, but Stupider
+Topic: Path::Resolver
 
 =head1 From Filename to Thing
 

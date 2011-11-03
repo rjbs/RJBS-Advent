@@ -1,5 +1,5 @@
-Title:   Giving the Gift of Code
-Package: Dist::Zilla
+Title: Giving the Gift of Code
+Topic: Dist::Zilla
 
 =head1 I Hate Wrapping
 

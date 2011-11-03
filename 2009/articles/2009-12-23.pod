@@ -1,5 +1,5 @@
-Title:   Sorting Automatically, By Hand
-Package: Sort::ByExample
+Title: Sorting Automatically, By Hand
+Topic: Sort::ByExample
 
 =pod
 

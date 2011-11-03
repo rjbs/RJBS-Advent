@@ -1,5 +1,5 @@
-Title:   One Last Present, All Boxed Up
-Package: Task::BeLike::RJBS
+Title: One Last Present, All Boxed Up
+Topic: Task::BeLike::RJBS
 
 =head1 It's Boxing Day!
 

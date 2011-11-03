@@ -1,5 +1,5 @@
-Title:   You Can Keep the Calendar
-Package: WWW::AdventCalendar
+Title: You Can Keep the Calendar
+Topic: WWW::AdventCalendar
 
 =head1 Merry Christmas!  Advent is over.
 

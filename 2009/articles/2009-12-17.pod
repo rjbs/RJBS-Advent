@@ -1,5 +1,5 @@
-Title:   Rewrite Email Without Worrying
-Package: MIME::Visitor
+Title: Rewrite Email Without Worrying
+Topic: MIME::Visitor
 
 =head1 Encoding and Email
 

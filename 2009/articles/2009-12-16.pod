@@ -1,5 +1,5 @@
-Title:   More Stuff I Stole from Catalyst (that they stole back)
-Package: String::RewritePrefix
+Title: More Stuff I Stole from Catalyst (that they stole back)
+Topic: String::RewritePrefix
 
 =head1 I Hate Typing
 

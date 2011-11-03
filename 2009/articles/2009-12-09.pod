@@ -1,5 +1,5 @@
-Title:   Like <DATA>, Only Less Stupid
-Package: Data::Section
+Title: Like <DATA>, Only Less Stupid
+Topic: Data::Section
 
 =head1 First, An Alternative
 

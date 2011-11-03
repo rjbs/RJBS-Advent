@@ -1,5 +1,5 @@
-Title:   Less Boilerplate, More Ice Cream
-Package: Mixin::Linewise
+Title: Less Boilerplate, More Ice Cream
+Topic: Mixin::Linewise
 
 =head1 Just a Little Less Work
 

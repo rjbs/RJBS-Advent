@@ -1,5 +1,5 @@
-Title:   59 23 24 12 * /bin/celebrate
-Package: App::Cronjob
+Title: 59 23 24 12 * /bin/celebrate
+Topic: App::Cronjob
 
 =head1 Solaris Ain't So Bad
 

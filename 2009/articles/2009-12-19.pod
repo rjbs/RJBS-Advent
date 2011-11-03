@@ -1,5 +1,5 @@
-Title:   Restoring The Traditions of our Forefathers
-Package: Git::Fingerd
+Title: Restoring The Traditions of our Forefathers
+Topic: Git::Fingerd
 
 =head1 The War on "Finger"
 

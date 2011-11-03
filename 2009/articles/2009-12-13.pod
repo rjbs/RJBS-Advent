@@ -1,5 +1,5 @@
-Title:   Valid Data to All Nations
-Package: Data::Rx
+Title: Valid Data to All Nations
+Topic: Data::Rx
 
 =head1 Params::Validate is Okay
 

@@ -1,5 +1,5 @@
-Title:   %{adj}s %s{holiday}s!
-Package: String::Formatter
+Title: %{adj}s %s{holiday}s!
+Topic: String::Formatter
 
 =head1 C<sprintf> is My Favorite Chainsaw
 

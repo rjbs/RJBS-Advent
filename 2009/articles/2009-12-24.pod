@@ -1,5 +1,5 @@
-Title:   Sending Email Simply
-Package: Email::Sender::Simple
+Title: Sending Email Simply
+Topic: Email::Sender::Simple
 
 =head1 The Biggest Box Under the Tree
 

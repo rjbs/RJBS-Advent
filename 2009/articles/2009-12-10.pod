@@ -1,5 +1,5 @@
-Title:   MIME, Dreaming of a White Christmas
-Package: Email::MIME::Kit
+Title: MIME, Dreaming of a White Christmas
+Topic: Email::MIME::Kit
 
 =head1 Making an Email
 

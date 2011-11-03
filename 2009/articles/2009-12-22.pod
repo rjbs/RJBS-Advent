@@ -1,5 +1,5 @@
-Title:   Object Marginalia
-Package: Mixin::ExtraFields
+Title: Object Marginalia
+Topic: Mixin::ExtraFields
 
 =head1 Scribbling Notes on an Object
 

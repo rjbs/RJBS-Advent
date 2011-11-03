@@ -1,5 +1,5 @@
-Title:  Built in Our Workshop, Delivered in Your Package
-Package: Sub::Exporter
+Title: Built in Our Workshop, Delivered in Your Package
+Topic: Sub::Exporter
 
 =head1 Exporting
 

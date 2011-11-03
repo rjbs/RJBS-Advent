@@ -1,5 +1,5 @@
-Title:   ...aka Config::RJBS::AndNobodyElse::KnowsWTFItDoes
-Package: Config::MVP
+Title: ...aka Config::RJBS::AndNobodyElse::KnowsWTFItDoes
+Topic: Config::MVP
 
 =head1 I'm not apologizing!
 

@@ -1,5 +1,5 @@
-Title:  The Little Deferral Boy
-Package: Email::Pipemailer::DieHandler
+Title: The Little Deferral Boy
+Topic: Email::Pipemailer::DieHandler
 
 =head1 Avoid Unwanted Returns
 

@@ -1,5 +1,5 @@
-Title:   In Pod We Trust
-Package: Pod::Coverage::TrustPod
+Title: In Pod We Trust
+Topic: Pod::Coverage::TrustPod
 
 =head1 Testing Pod Coverage
 

@@ -1,5 +1,5 @@
-Title:   First-Class CLI Applications
-Package: App::Cmd
+Title: First-Class CLI Applications
+Topic: App::Cmd
 
 =head1 Scripts are Our Friends
 

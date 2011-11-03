@@ -1,5 +1,5 @@
-Title:  Making a List, Checking it 0b10 Times...
-Package: Number::Nary
+Title: Making a List, Checking it 0b10 Times...
+Topic: Number::Nary
 
 =head1 Beyond Hex and Octal
 

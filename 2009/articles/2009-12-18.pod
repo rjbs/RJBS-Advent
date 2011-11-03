@@ -1,5 +1,5 @@
-Title:   Glory to Pod in the Highest
-Package: Pod::Weaver
+Title: Glory to Pod in the Highest
+Topic: Pod::Weaver
 
 =head1 Glory?  To Pod?
 
