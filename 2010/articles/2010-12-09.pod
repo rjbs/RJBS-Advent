@@ -1,5 +1,5 @@
-Title:   A Place to Shove Your Settings
-Package: Data::Hive
+Title: A Place to Shove Your Settings
+Topic: Data::Hive
 
 =head1 Because 132 Fields Ought To Be Enough for Anybody
 

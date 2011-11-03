@@ -1,5 +1,5 @@
-Title:   Lovingly Mass-Produced HTML
-Package: HTML::Widget::Factory
+Title: Lovingly Mass-Produced HTML
+Topic: HTML::Widget::Factory
 
 =head1 Hand-Crafted Bugs
 

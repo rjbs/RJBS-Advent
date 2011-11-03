@@ -1,5 +1,5 @@
-Title:  Feast of St. Burl
-Package: Net::Gopher::Server
+Title: Feast of St. Burl
+Topic: Net::Gopher::Server
 
 =head2 NOT ON THE CPAN
 

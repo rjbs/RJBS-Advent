@@ -1,5 +1,5 @@
-Title:   83% of Advent Remaining
-Package: Acme::ProgressBar
+Title: 83% of Advent Remaining
+Topic: Acme::ProgressBar
 
 =head1 Sufficiently Advanced (ProgressBar) Technology
 

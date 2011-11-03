@@ -1,5 +1,5 @@
-Title:   Testing with Classes, Roles, and Antlers
-Package: Test::Routine
+Title: Testing with Classes, Roles, and Antlers
+Topic: Test::Routine
 
 =head1 Reuse, reuse, reuse
 

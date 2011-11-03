@@ -1,5 +1,5 @@
-Title:   Rolling Your Own Method Dispatch
-Package: MRO::Magic
+Title: Rolling Your Own Method Dispatch
+Topic: MRO::Magic
 
 =head2 EXPERIMENTAL CODE AHEAD
 

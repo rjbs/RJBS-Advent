@@ -1,5 +1,5 @@
-Title:   Shuffle Smarter, Not Harder
-Package: albumen
+Title: Shuffle Smarter, Not Harder
+Topic: albumen
 
 =head2 NOT ON THE CPAN
 

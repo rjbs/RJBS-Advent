@@ -1,5 +1,5 @@
-Title:   We'll Have a Blue Christmas Without del.icio.us
-Package: Net::Delicious::Simple
+Title: We'll Have a Blue Christmas Without del.icio.us
+Topic: Net::Delicious::Simple
 
 =head1 What Color is Your Data's Parachute?
 

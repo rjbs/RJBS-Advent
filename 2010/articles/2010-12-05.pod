@@ -1,5 +1,5 @@
-Title:  It's a Time for Tolerance
-Package: Number::Tolerant
+Title: It's a Time for Tolerance
+Topic: Number::Tolerant
 
 =head1 Secret Origins!
 

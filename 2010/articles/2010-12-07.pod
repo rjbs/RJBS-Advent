@@ -1,5 +1,5 @@
-Title:  Safe, Simple, Deadly
-Package: Test::Fatal
+Title: Safe, Simple, Deadly
+Topic: Test::Fatal
 
 =head1 Making Exception Testing Easier
 

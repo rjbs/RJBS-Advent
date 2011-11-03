@@ -1,5 +1,5 @@
-Title:   A Lousy Locker (...because Worse is Better!)
-Package: DBIx::Locker
+Title: A Lousy Locker (...because Worse is Better!)
+Topic: DBIx::Locker
 
 =head1 Optimizing for Failure
 

@@ -1,5 +1,5 @@
-Title:   When in doubt, add more globals.
-Package: Global::Context
+Title: When in doubt, add more globals.
+Topic: Global::Context
 
 =head2 EXPERIMENTAL CODE AHEAD
 

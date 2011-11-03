@@ -1,5 +1,5 @@
-Title:   Bringing out the Good Exporter for Company
-Package: Sub::Import
+Title: Bringing out the Good Exporter for Company
+Topic: Sub::Import
 
 =head1 The Illusion of Sophistication
 

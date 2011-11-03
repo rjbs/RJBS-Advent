@@ -1,5 +1,5 @@
-Title:   Wanted: Gift, Got: Gift
-Package: Test::BinaryData
+Title: Wanted: Gift, Got: Gift
+Topic: Test::BinaryData
 
 =head1 The Case of the Invisible Differences
 

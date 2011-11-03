@@ -1,5 +1,5 @@
-Title:   Dealing with an Oversized Interface
-Package: Role::Subsystem
+Title: Dealing with an Oversized Interface
+Topic: Role::Subsystem
 
 =head1 Too Many Methods
 

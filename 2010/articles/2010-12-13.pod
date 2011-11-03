@@ -1,5 +1,5 @@
-Title:   All Marked Up with No Place to Go
-Package: synrtf
+Title: All Marked Up with No Place to Go
+Topic: synrtf
 
 =head2 NOT ON THE CPAN
 

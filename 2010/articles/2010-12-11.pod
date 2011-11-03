@@ -1,5 +1,5 @@
-Title:   Putting less on Your Wish List
-Package: fewer
+Title: Putting less on Your Wish List
+Topic: fewer
 
 =head1 One of Perl's C<less>er Known Features
 

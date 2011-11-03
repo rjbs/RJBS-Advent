@@ -1,5 +1,5 @@
-Title:   One People, One Address Book
-Package: App::Addex
+Title: One People, One Address Book
+Topic: App::Addex
 
 =head1 Centralizing Your Config
 

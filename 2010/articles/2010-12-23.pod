@@ -1,5 +1,5 @@
-Title:   Rolling Your Own Composition
-Package: MooseX::ComposedBehavior
+Title: Rolling Your Own Composition
+Topic: MooseX::ComposedBehavior
 
 =head1 Beyond Method Modifiers
 

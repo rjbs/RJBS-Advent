@@ -1,5 +1,5 @@
-Title:  Option Processing -- This Time, Invented Here!
-Package: Getopt::Long::Descriptive
+Title: Option Processing -- This Time, Invented Here!
+Topic: Getopt::Long::Descriptive
 
 =head1 Everybody's Favorite Getopt
 

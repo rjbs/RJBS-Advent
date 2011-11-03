@@ -1,5 +1,5 @@
-Title:   In Lieu of Coal, Naughty Children May Be Given M4 Files
-Package: DNS::Oterica
+Title: In Lieu of Coal, Naughty Children May Be Given M4 Files
+Topic: DNS::Oterica
 
 =head2 EXPERIMENTAL CODE AHEAD
 

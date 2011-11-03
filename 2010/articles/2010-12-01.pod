@@ -1,5 +1,5 @@
-Title:  A Logging Library that Really Stinks
-Package: Log::Dispatchouli
+Title: A Logging Library that Really Stinks
+Topic: Log::Dispatchouli
 
 =head1 Couldn't you just use...
 

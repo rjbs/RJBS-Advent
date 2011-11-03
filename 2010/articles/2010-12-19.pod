@@ -1,5 +1,5 @@
-Title:   Exporting Globs for Fun and Profit
-Package: Sub::Exporter::GlobExporter
+Title: Exporting Globs for Fun and Profit
+Topic: Sub::Exporter::GlobExporter
 
 =head1 What's a glob?
 

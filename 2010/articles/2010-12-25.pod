@@ -1,5 +1,5 @@
-Title:   Advent is over!  Go home!
-Package: CPAN
+Title: Advent is over!  Go home!
+Topic: CPAN
 
 =head1 Merry Christmas!
 

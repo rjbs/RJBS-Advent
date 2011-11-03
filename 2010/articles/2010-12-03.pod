@@ -1,5 +1,5 @@
-Title:   Exceptionally Extensible Exceptions
-Package: Throwable::X
+Title: Exceptionally Extensible Exceptions
+Topic: Throwable::X
 
 =head1 Building Exception Classes with Moose
 
