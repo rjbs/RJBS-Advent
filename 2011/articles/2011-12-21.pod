@@ -1,5 +1,5 @@
-Title:   Light the First Candle
-Package: Pancake::Screaming
+Title: Light the First Candle
+Topic: Pancake::Screaming
 
 =head1 Aaaaaaaaaaaaaaaaaugh!
 
