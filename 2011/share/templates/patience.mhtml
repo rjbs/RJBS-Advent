@@ -1,0 +1,10 @@
+<%flags>inherit => '/page.mhtml'</%flags>
+
+<%method content>
+<%args>
+$days
+</%args>
+
+<b>Patience!</b>  It's only <% $days %> until the first candle is lit on the <%
+$calendar->title |h%>!
+</%method>
