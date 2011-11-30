@@ -14,3 +14,29 @@
   26 - 
   27 - 
   28 - 
+
+__END__
+* Router::Dumb
+* App::Smarkmail ?
+* App::Whiff ?
+* Color::Palette ?
+* CPAN::Faker, Module::Faker
+* Data::Bucketeer
+* Data::InputMonster
+* Data::OptList
+* Data::TagHive
+* Date::Span
+* Pod::CYOA
+* CheckPrereqsIndexed
+* TaskWeaver
+* Math::VarRate
+* MooseX::SetOnce
+* MooseX::ClassCompositor
+* MooseX::Types::Perl
+* Net::DNS::GuessTZ
+* Querylet
+* Software::License
+* String::Errf
+* String::TagString
+* Test::MinimumVersion
+* Time::Duration::Object
