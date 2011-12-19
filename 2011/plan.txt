@@ -6,33 +6,26 @@
   19 20 21 22 23 24 25 
   26 27 28 29 30 31    
 
-  21 - 
-  22 - 
-  23 - 
-  24 - 
-  25 - 
-  26 - 
-  27 - 
-  28 - 
+  21 - Color::Palette
+  22 - fakecpan / *::Faker
+  23 - MooseX::ClassCompositor
+  24 - Querylet
+  25 - MooseX::Types::Perl
+  26 - Router::Dumb
+  27 - MooseX::SetOnce
+  28 - CheckPrereqsIndexed
 
 __END__
-* Router::Dumb
 * App::Smarkmail ?
 * App::Whiff ?
-* Color::Palette ?
-* CPAN::Faker, Module::Faker
 * Data::Bucketeer
 * Data::InputMonster
 * Data::OptList
 * Data::TagHive
 * Date::Span
 * Pod::CYOA
-* CheckPrereqsIndexed
 * TaskWeaver
 * Math::VarRate
-* MooseX::SetOnce
-* MooseX::ClassCompositor
-* MooseX::Types::Perl
 * Net::DNS::GuessTZ
 * Querylet
 * Software::License
