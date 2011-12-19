@@ -1,18 +1,201 @@
-Title: Light the First Candle
-Topic: Pancake::Screaming
+Title: It's Just a Palette Swap
+Topic: Color::Palette
 
-=head1 Aaaaaaaaaaaaaaaaaugh!
+=head1 Because I am Lazy!
 
-Help! Help!  This latke won't stop screaming!
+If you followed my L<2009|http://advent.rjbs.manxome.org/2009/> or
+L<2010|http://advent.rjbs.manxome.org/2010/> RJBS Advent calendars, or the
+L<2011|http://perladvent.org/2011/> Perl Advent calendar, the look of this
+calendar is probably pretty familiar.  I admit it:  I'm lazy.  I'm no good at
+visual design (obviously) and I couldn't work up the motivation to do a lot of
+redesign work.  Heck, I couldn't bring myself to do much I<initial> visual
+design work.  The HTML and CSS for L<WWW::AdventCalendar>'s default templates –
+which I use – were largely lifted from the L<Catalyst Advent
+Calendar|http://www.catalystframework.org/calendar>.  (By the way, thanks,
+Catalyst Advent Calendar authors!)
+
+I didn't want to use exactly the same look every year, though.  I wanted it to
+be clear, at least to me, which year I had found myself looking at.  To make
+this possible without having to do much design work, I did a bunch of coding
+work instead.  (This is a common theme for me:  it's usually easier to write
+more code than to learn how to solve the underlying problem.)  I made it easy
+to implement the strategy used by lazy (or, if you prefer, "efficient")
+graphics programmers since time immemorial: the palette swap.
+
+If you don't know what a palette swap is, think back the early Mario Bros.
+games.  Remember how Luigi and Mario were totally indistinguishable, save for
+their coloring?  Palette swap!
+
+=head1 Show me the code!
+
+First, let me show you how it got used.  First, I went through my CSS file and
+make a bunch of changes like this:
+
+  #!vim diff
+  diff --git a/share/templates/style.css b/share/templates/style.css
+  index b7b603b..27d551e 100644
+  --- a/share/templates/style.css
+  +++ b/share/templates/style.css
+  @@ -3,8 +3,8 @@
+   %color
+   </%args>
+   body {
+  -  color: #eaf;
+  -  background: #61375c;
+  +  color: <% $color{bodyFG} %>;
+  +  background: <% $color{bodyBG} %>;
+     font-family: verdana, tahoma, sans-serif;
+   }
+
+In other words, I turned my CSS file into a template.  Instead of literal
+colors, I told it to go get the color from a hash.  Almost every use of color
+got a name.  Code sample backgrounds, foregrounds for each type of syntax
+element, section header foregrounds and backgrounds, the big background
+blotter, and so on.  You can probably imagine what the rest of L<this
+diff|https://github.com/rjbs/WWW-AdventCalendar/commit/86bf8ff8d7809a7cc7502e4061cebcf1d5a9c2b8#diff-2>
+looked like: more of the same.
+
+That's fine, but the hash had to come from somewhere.  I could have just built
+a hash mapping names to colors, but I didn't want to end up with this:
 
   #!perl
-  my $latke;
+  my %color = (
+    bodyFG => '#eaf',
+    bodyBG => '#61375c',
+    codeFG => '#eaf',
+    codeBG => '#61375c',
+    perlFG => '#eaf',
+    perlBG => '#61375c',
+    ...
+    ...
+  );
 
-  $latke->scream while 1;
+I wanted to be able to reskin things I<quickly> but I<without> resorting to
+doing a C<s///> substituiton on the code.  I wanted named indirection:
 
-What can you do?
+  #!perl
+  my %color = (
+    faintPink => '#eaf',
+    deepLilac => '#61375c',
+
+    bodyFG => 'faintPink',
+    bodyBG => 'deepLilac',
+    codeFG => 'faintPink',
+    codeBG => 'deepLilac',
+    perlFG => 'faintPink',
+    perlBG => 'deepLilac',
+    ...
+    ...
+  );
+
+...but this is a problem, too.  If you want everything that used to be a deep
+lilac to become burgundy, you'd have to do another big C<s///> again.  Instead,
+you can have I<two> levels of indirection:
+
+  #!perl
+  my %color = (
+    faintPink => '#eaf',
+    deepLilac => '#61375c',
+
+    generic0 => 'faintPink',
+    generic1 => 'deepLilac',
+
+    bodyFG => 'generic0',
+    bodyBG => 'generic1',
+    codeFG => 'generic0',
+    codeBG => 'generic1',
+    perlFG => 'generic0',
+    perlBG => 'generic1',
+    ...
+    ...
+  );
+
+Now, if you want to make that change to all things lilac, you just change the
+value for C<generic1> to point to something else – pesumably a new entry for
+C<burgundy>.
+
+This is exactly the problem that L<Color::Palette> was meant to solve.  It
+makes it easy to change one color everywhere, so that you never accidentally
+push the big change to use a new color scheme without upgrading that one block
+somewhere, accidentally rendering your Terms & Conditions in black on black.
+Oops!
+
+=head1 Using Color::Palette
+
+Using Color::Palette is easy.
+
+  #!perl
+  use Color::Palette;
+  my $palette = Color::Palette->new({
+    colors => {
+      faintPink => '#eaf',
+      deepLilac => '#61375c',
+
+      generic0 => 'faintPink',
+      generic1 => 'deepLilac',
+
+      bodyFG => 'generic0',
+      bodyBG => 'generic1',
+      ...
+      ...
+    },
+  });
+
+  my $color    = $palette->color('bodyFG'); # returns a Graphics::Color object
+
+  my $css_hash = $palette->as_css_hash;
+
+That C<as_css_hash> method returns a hash where the keys are color names and
+the values are CSS-style RGB color specifiers, like C<#eaba03>.  That's just
+where we get the C<%color> used in the CSS changes we started with.
+
+That's how WWW::AdventColor does things with Color::Palette, at least as of
+1.105, but it's not necessariy the I<best> way, because you can do this:
+
+  #!perl
+  use Color::Palette;
+  use Color::Palette::Schema;
+
+  my $color_schema = Color::Palette::Schema->new({
+    required_colors => [ qw( codeFG codeBG bodyFG bodyBG ... ) ],
+  });
+
+  my $palette = Color::Palette->new({
+    # exactly what we saw in the example above
+  });
+
+  my $optimized = $palette->optimize_for($color_schema);
+
+  my $css_hash = $optimized->as_strict_css_hash;
+
+A schema object, here, is about as simple as it looks.  It's just represents
+a list of color names that must exist, and it has some behavior that lets you
+check an existing palette to see whether it can be used for something requiring
+that schema.
+
+The C<optimize> for method on a palette takes a schema and returns a new
+palette with I<only> those colors.  Then, the C<as_B<strict>_css_hash> method
+acts just like C<as_css_hash>, but the returned hashref will throw an error if
+you try to fetch the value for a key that doesn't exist.  This means that if
+some naughty person has put C<$color{deepLilac}> into the CSS template, and
+you've optimized down to just the semantic names (like "bodyFG") then your
+templates won't render.  Later, when you replace lilac with burgundy and delete
+the defition of lilac, you won't start issuing CSS with an empty string as the
+color value for anything.
+
+You could also get this behavior without the strict hash by using the C<color>
+method on the palette, which dies on unknown names, but then you'll have to
+call another method on the result to get the hex string, and it just becomes a
+lot of typing.
+
+No matter how you get at the colors afterward, though, Color::Palette makes it
+a lot easier to palette swap your application later.
 
 =head1 See Also
 
 =for :list
-* L<Snicket::Lemony>
+* L<Color::Palette>
+* L<Graphics::Color>
+* L<Color::Library>
+* L<WWW::AdventCalendar>
+* L<Ermac|http://en.wikipedia.org/wiki/Ermac>
