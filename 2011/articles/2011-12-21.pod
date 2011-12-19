@@ -164,7 +164,7 @@ That's how WWW::AdventColor does things with Color::Palette, at least as of
     # exactly what we saw in the example above
   });
 
-  my $optimized = $palette->optimize_for($color_schema);
+  my $optimized = $palette->optimized_for($color_schema);
 
   my $css_hash = $optimized->as_strict_css_hash;
 
@@ -173,7 +173,7 @@ a list of color names that must exist, and it has some behavior that lets you
 check an existing palette to see whether it can be used for something requiring
 that schema.
 
-The C<optimize> for method on a palette takes a schema and returns a new
+The C<optimized_for> method on a palette takes a schema and returns a new
 palette with I<only> those colors.  Then, the C<as_B<strict>_css_hash> method
 acts just like C<as_css_hash>, but the returned hashref will throw an error if
 you try to fetch the value for a key that doesn't exist.  This means that if
