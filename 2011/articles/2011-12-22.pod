@@ -1,0 +1,169 @@
+Title: Light the First Candle
+Topic: Fake CPAN
+
+=head1 Testing the CPAN
+
+Ages ago, L<Randal Schwarz|http://www.stonehenge.com/merlyn/> wrote the
+C<minicpan> script to produce a minimal, local mirror of the CPAN.  With his
+gracious permission, I converted it to a L<CPAN distribution|CPAN::Mini> so I
+could install it as easily as anything else.  The problem I had was that I
+really liked writing tests, and writing tests for C<minicpan> was going to be a
+big pain.
+
+I threw together bunch of pretend CPAN distribution files, all empty tarballs,
+and wrote an F<02packages> file by hand, and then realized I'd need to put the
+thing onto a web server, because C<minicpan> works over HTTP.  I'd have to
+update the tarballs by hand, as well as the index, if I needed to test for new
+things.  The whole thing just started to seem like a huge pain, so testing for
+the CPAN-Mini distribution devolved to the two lamest (but better than nothing)
+test methods often used:  I ran it by hand before releasing and I shipped a
+test to make sure that the modules all compiled.  I<Ugh.>
+
+Let's take a quick moment to explain how the CPAN works, on a very basic level,
+and greatly simplified.  There are two crucial parts to a CPAN archive (and
+many more parts that I will happily ignore, here).  First, there is a big pile
+of files, mostly gzipped tar archives, organized into directories by uploader.
+Almost to a one, these files are "distributions" with a F<Makefile.PL> or
+F<Build.PL> and a bunch of code and tests.  Secondly, there is
+F<02packages.details.txt.gz>, which is a very simple list of what Perl packages
+have been indexed as official parts of the CPAN, and in what archive they can
+be found.  There's an indexer that takes care of updating this file when new
+distributions are uploaded, and a permissions system, and a whois system, but
+only the repository of tarballs and the index of packages are relevant for
+things like the CPAN shell, cpanminus, or C<minicpan>.
+
+Part of the problem with testing against the CPAN is that tests usually want a
+fixed set of data so they can have a fixed set of expectations.  The CPAN is
+changing all the time.  Taking a snapshot is easy, but snapshots are huge!  My
+heavily pruned snapshot is about 1.7 gigs.  So, you could prune things down
+much, much more, but there still might be indexing glitches, affecting what you
+thought the results should be.  Worse, you might care about the contents of
+distributions, and you might craft those contents yourself, which might lead to
+things like L<CPAN::Test::Dummy::Perl5::Build>, one of many modules that exist
+only to serve as test data for live CPAN testing.
+
+These problems, and more, all arose when we decided, at
+L<work|http://pobox.com/>, to build a CPAN-like system for managing our
+deployment of Perl code.  We needed to test a lot of its tools against simple
+distributions, but we didn't want to have to upload them, or even make them.
+We wanted to make a list of distribution names that we wanted, and then have
+them show up in directories, and then have an F<02package> file built for us.
+
+I worked on it then, and at several of the annual Perl QA Hackathons, and this
+spring I delivered the first pass at the final product:  L<Fake
+CPAN|http://fakecpan.org/>.  Before I explain what I<that> is, I'll explain the
+tools that are under the hood.
+
+=head1 Module::Faker
+
+The first thing I wanted was a way to quickly build a really boring CPAN
+distribution from as little input as possible.  With that, I could test things
+like extracting it, running its tests, installing it, and even scanning it to
+find its author, provided packages, and so on.  I sat down and banged out
+Module::Faker – although it was called ExtUtils::FakeFaker until Schwern begged
+me not to put it under ExtUtils.
+
+Module::Faker would take a file that looks like a F<META.yml> or F<META.json>
+file and build the dist that could contain such a file.  For example:
+
+  #!vim yaml
+  name: Email-Infinite
+  abstract: please make it stop
+  X_Module_Faker:
+    cpan_author: RJBS
+
+Given this input YAML, Module::Faker will build a distribution with
+F<lib/Email/Infinite.pm>, with the right Pod in it, and a package declaration,
+and a version number.  It will add a real F<META.yml> and a F<Makefile.PL> and
+a bunch of other stuff.  The C<X_Module_Faker> key provides some extra
+information, like who should be listed as the author.  There are a bunch of
+other options that I can specify, too, like extra modules to build, extra files
+to add, version numbers, and so on.
+
+Module::Faker is, in a way, the
+L<Dist::Zilla|http://advent.rjbs.manxome.org/2009/2009-12-11.html> of bogus
+code.  (There are some who would suggest that Dist::Zilla is the Dist::Zilla of
+bogus code.)
+
+Later, I went back and added an ever terser way to specify distributions to
+fake up.  These days, you can just create a file with the right sort of name,
+like:  F<RJBS_Another-Dist-1.24.tar.gz.dist>
+
+It will create Another::Dist with version 1.24 and all the required cruft to go
+along with it, attribute it to me (RJBS), and package it up into a tarball.
+
+Module::Faker was already really useful for testing things like the PAUSE
+indexer or simple analytical tools.  What I wanted, though, was a way to test
+something that operated on a bunch of distributions in aggregate, with an index
+file.
+
+=head1 CPAN::Faker
+
+CPAN::Faker builds a bunch of distributions, with an index file.  (Who saw that
+coming?)  It uses Module::Faker to build a bunch of fake distributions and then
+builds an index for them.  It's pretty darn simple to use, to.  First you drop
+a bunch of Module::Faker source files (like the YAML or F<.dist> files above)
+into a directory.  Then you run:
+
+  #!code
+  $ cpanfaker --source ./source-dir --dest ./dest-dir
+
+It will build every dist, put it under the hashed author dir like
+F<authors/id/R/RJ/RJBS>, and then build an index, listing the
+highest-versioned, first-indexed source for each package.  It also creates a
+few of the other files things need, like F<CHECKSUMS> and so on.  The contents
+of F<dest-dir>, after C<cpanfaker> runs, will be suitable for use by a CPAN
+client like C<cpan> or C<minicpan> or C<cpanm>¹.
+
+=head1 Fake CPAN
+
+With CPAN::Faker working, I was finally able to do a whole lot of testing.  I
+could easily produce a tiny but CPAN-like hierarchy.  For testing CPAN-Mini,
+what I needed next was to put the whole thing on a web server.
+
+It seemed like a real waste to just put it on some personal server, though, for
+use only by me when testing my stuff.  I wanted to make it a commodity dataset
+that anybody could use.  Once I started to think about it that way, it seemed
+like I might want a lot of different kinds of these archives.  C<minicpan>,
+after all, would never really open the tarballs up.  Other tools might, though,
+like C<cpan> or L<PAUSE|http://pause.perl.org>.  Not only would having I<some>
+content matter, but having I<interesting> content would matter.  After all,
+CPAN::Test::Dummy::Perl5::Build isn't just there for fun: it has
+characteristics that make it useful as a test.
+
+Some of these might get pretty big, so having a bunch of fake CPANs seemed like
+a good way to segment things into different groups.  Then, once these became
+popular, people's tests might be broken if the exact contents of the fake
+changed.  For example, imagine that a fake CPAN was built populated entirely by
+dists with edge-case installer behaviors.  CPAN client authors could use this
+fake to test that their code handled things correctly.  When a new weird
+behavior was identified, it could be added to the fake for everyone to test.
+
+The problem is that anyone using the data for testing would suddenly start
+seeing failures.  Rather than require that users bundle the whole fake, we can
+provide every version of every fake.  C<minicpan> has a fake called "minicpan."
+The latest version is 1.002, and you can find its contents at
+C<http://fakecpan.org/fake/minicpan/1.002/cpan/>
+
+When new dists are added to it, or when its package index file is changed, or
+whenever it has to change in any way, that can go into
+C<http://fakecpan.org/fake/minicpan/1.00B<3>/cpan/>.  Tests sent out into the
+wild can always run against the 1.002 URL, and tests run by the developer can
+always target the latest version by using a URL like
+C<http://fakecpan.org/fake/minicpan/B<latest>/cpan/>
+
+Fake CPAN is currently being used for testing CPAN-Mini, PAUSE, MetaCPAN, CPAN
+Grep, and other tools.
+
+=head1 Footnotes
+
+=for :list
+1.  To use a fake CPAN with C<minicpan>, you'll need to use the C<--mirror> and C<--mirror-only> switches.
+
+=head1 See Also
+
+=for :list
+* L<CPAN::Mini>
+* L<Module::Faker>
+* L<CPAN::Faker>
+* L<Fake CPAN|http://fakecpan.org/>
