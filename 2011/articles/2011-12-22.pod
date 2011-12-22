@@ -1,4 +1,4 @@
-Title: Light the First Candle
+Title: It's Only a Model!
 Topic: Fake CPAN
 
 =head1 Testing the CPAN
