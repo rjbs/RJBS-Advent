@@ -1,0 +1,27 @@
+Title: Factory Factory Factory Factory
+Topic: MooseX::ClassCompositor
+
+=head1 I like building classes!
+
+I have constructed many classes in my day.  Over time, like many other
+programmers, I found that I wanted to reuse hunks of them.  Great!  No problem!
+Code reuse is one of the big wins of using object-oriented design.  So, of
+course I ended up writing a bunch of
+L<subclasses|http://en.wikipedia.org/wiki/Subclass_%28computer_science%29#Subclasses_and_superclasses>
+of classes I'd already written.  And I wrote
+L<abstract base classes|http://en.wikipedia.org/wiki/Abstract_base_class> to
+make it easier to write different kids of subclasses.  I've used
+L<multiple inheritance|http://en.wikipedia.org/wiki/Multiple_inheritance> to
+combine them all, L<mixins|http://en.wikipedia.org/wiki/Mixin> when I found out
+that multiple inheritance was considered harmful, and
+L<roles|http://en.wikipedia.org/wiki/Trait_%28computer_programming%29> when the
+wind blew that way.  The end result is that I ended up with lots of pieces for
+putting classes together.
+
+=head1 See Also
+
+=for :list
+* L<CPAN::Mini>
+* L<Module::Faker>
+* L<CPAN::Faker>
+* L<Fake CPAN|http://fakecpan.org/>
