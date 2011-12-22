@@ -3,25 +3,157 @@ Topic: MooseX::ClassCompositor
 
 =head1 I like building classes!
 
-I have constructed many classes in my day.  Over time, like many other
-programmers, I found that I wanted to reuse hunks of them.  Great!  No problem!
-Code reuse is one of the big wins of using object-oriented design.  So, of
-course I ended up writing a bunch of
-L<subclasses|http://en.wikipedia.org/wiki/Subclass_%28computer_science%29#Subclasses_and_superclasses>
-of classes I'd already written.  And I wrote
-L<abstract base classes|http://en.wikipedia.org/wiki/Abstract_base_class> to
-make it easier to write different kids of subclasses.  I've used
-L<multiple inheritance|http://en.wikipedia.org/wiki/Multiple_inheritance> to
-combine them all, L<mixins|http://en.wikipedia.org/wiki/Mixin> when I found out
-that multiple inheritance was considered harmful, and
-L<roles|http://en.wikipedia.org/wiki/Trait_%28computer_programming%29> when the
-wind blew that way.  The end result is that I ended up with lots of pieces for
-putting classes together.
+I've really been happy with doing more and more stuff with
+L<roles|http://en.wikipedia.org/wiki/Trait_%28computer_programming%29> instead
+of
+L<subclasses|http://en.wikipedia.org/wiki/Subclass_%28computer_science%29#Subclasses_and_superclasses>.
+More and more, I've ended up writing a bunch of roles all related to some kind
+of I<thing> that I want to make, and then I pick the roles I want, when I make
+the thing.  Is that clear as mud?  Let me elaborate:
+
+Stevan Little and I wrote L<HTTP::Throwable>, a system for throwing exceptions
+that will be transformed into HTTP responses.  There are a bunch of roles that
+might show up in these:  C<Redirect>, for example, means that the exception is
+going to need a C<Location> header.  C<BoringText> can be brought into let any
+of the methods get a very simple, boring C<text_body> method.
+
+If you wanted exceptions to have more data, for communicating detailed error
+messages, you might write a C<JSONRPC> role that gave them a few more
+attributes and a C<json_body> method.  You might add a C<ForUser> role that
+tacked on even more data, but only if the error came after authentication.  It
+should be easy to imagine many more such roles.
+
+Now, imagine that you've figured out all the roles you might need for your
+applications full gamut of exception behavior, and that you might need any
+possible intersection of those.  Just I<naming> them all would be a pain.
+Then you'd have to remember those names, or at least the rule you used to name
+them.  Then you'd have to generate all that code and put it into files.  Then
+you'd have to make sure all the classes were loaded.  I<What a drag!>
+
+Moose is meant to make a lot of this unneeded, because it gives you tools to
+generate classes easily at runtime without doing a lot of nasty futzing about
+with globs and stashes – or worse, building up strings and using C<eval>.
+Moose lets you generate classes with a nice, simple method-based API.  Even
+that is kind of a drag to use, though, and I wanted something better.
+
+After writing a few one-off somethings kinda-better, I brought some of the
+designs to the table at work, where my colleague L<Mark Jason
+Dominus|http://blog.plover.com/> and I hammered together
+L<MooseX::ClassCompositor>.
+
+=head1 Class Compositor?
+
+A MooseX::ClassCompositor is a class
+L<factory|http://en.wikipedia.org/wiki/Factory_%28software_concept%29>: it's a
+thing whose job is to churn out classes.  I didn't want to call it
+MooseX::ClassFactory, though, because there's a pretty strong knee-jerk
+reaction among many Perl programmers that "factory" means "overcomplicated."
+In fact, I bet I've lost a few readers in the last few lines alone by admitting
+that this article is about a class factory.
+
+Really, a class factory is a simple thing, and it's used to make your code
+simpler.  You tell it what kind of class you want, and it builds it for you.
+First, though, you have to set the factory up with some settings to explain
+what kind of classes you plan to build.  In our case, we want to make
+HTTP::Throwble-ish classes.
+
+  #!perl
+  my $compositor = MooseX::ClassCompositor−>new({
+    class_basename  => 'MyApp::HTTP::Throwable',
+    fixed_roles     => [ '=HTTP::Throwable' ],
+    role_prefixes   => {
+      ''  => 'HTTP::Throwable::Role::',
+      '=' => '',
+    },
+  });
+
+  my $class = $compositor->class_for( qw( Redirect JSONRPC ForUser ));
+
+  $class->throw( ... );
+
+We've configured our compositor to I<always> compose the HTTP::Throwable role.
+If you pass arguments to its C<class_for> method, it will expand them according
+to the C<role_prefixes> you gave it (using
+L<String::RewritePrefix|http://advent.rjbs.manxome.org/2009/2009-12-16.html>)
+and then also compose those roles.  These generated classes get
+automatically-generated names, too, but we've specified a starting namespace
+for them with the C<class_basename> parameter, so we can identify the objects
+more or less, as needed.
+
+Calls to C<class_for> are memoized, too.  That means that if you keep asking
+for the same class over and over, it will quickly give you the one it built
+before, so it doesn't need to go through all the work of role summation, glob
+muckery, and so on.
+
+=head1 More Complicated Composition
+
+There are a few more useful things you can do with your compositor.  For one,
+you can compose class metaroles.  If you know what this is, you may already
+be glad to hear you can do it.  If you I<don't> know what this is, the use case
+99% of the time will be adding the following C<class_metaroles> argument:
+
+  #!perl
+  my $compositor = MooseX::ClassCompositor−>new({
+    class_basename  => 'MyApp::HTTP::Throwable',
+    fixed_roles     => [ '=HTTP::Throwable' ],
+    class_metaroles => {
+      class => [ 'MooseX::StrictConstructor::Trait::Class' ],
+    },
+    role_prefixes   => {
+      ''  => 'HTTP::Throwable::Role::',
+      '=' => '',
+    },
+  });
+
+...and now all your constructed classes have L<strict
+constructors|MooseX::StrictConstructor>.  If you get nothing else out of this
+article, click that link and start using strict constructors I<everywhere>.
+
+You can also use L<parameterized roles|MooseX::Role::Parameterized> with your
+compositor:
+
+  my $class = $compositor->class_for(
+    'Redirect',
+    [ RPC => JSONRPC => { our_ident => 'myApp', default_port => 8080 } ],
+    'ForUser',
+  );
+
+Array references in the roles list use the first element as the nonce name for
+the parameterized role (for memoization) and the other two parameters as the
+role's short name and parameters.
+
+=head1 Sugar!
+
+The way we actually use this is actually with something a bit more like this:
+
+  #!perl
+  use Sub::Exporter -setup => [ qw(error) ];
+
+  my $COMPOSITOR = MooseX::ClassCompositor->new({
+    class_basename  => 'MyApp::HTTP::Throwable',
+    fixed_roles     => [ '=HTTP::Throwable', ... ],
+    class_metaroles => { class => [ 'MooseX::StrictConstructor::Trait::Class' ] },
+    role_prefixes   => {
+     ''    => 'HTTP::Throwable::Role::',
+     '='   => '',
+    }
+  });
+
+  sub error { $COMPOSITOR->class_for(@_); }
+
+...then, anywhere in our code base where we've used that package and imported
+C<error>, we can write:
+
+  #!perl
+  error(qw(ForUser Plumbing Temporary))->throw("We'll be right back!");
+
+Because of MooseX::ClassCompositor, we've ended up with much, much less of our
+program's logic stored in prebuilt classes.  Instead, we have been able to
+break things into reusable roles that we compose as needed, efficiently, just
+in time for use.  It's been a very successful and enjoyable experiment.
 
 =head1 See Also
 
 =for :list
-* L<CPAN::Mini>
-* L<Module::Faker>
-* L<CPAN::Faker>
-* L<Fake CPAN|http://fakecpan.org/>
+* L<MooseX::ClassCompositor>
+* L<MooseX::StrictConstrictor>
