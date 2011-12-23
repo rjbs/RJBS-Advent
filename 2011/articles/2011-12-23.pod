@@ -59,7 +59,7 @@ what kind of classes you plan to build.  In our case, we want to make
 HTTP::Throwble-ish classes.
 
   #!perl
-  my $compositor = MooseX::ClassCompositor−>new({
+  my $compositor = MooseX::ClassCompositor->new({
     class_basename  => 'MyApp::HTTP::Throwable',
     fixed_roles     => [ '=HTTP::Throwable' ],
     role_prefixes   => {
@@ -94,7 +94,7 @@ be glad to hear you can do it.  If you I<don't> know what this is, the use case
 99% of the time will be adding the following C<class_metaroles> argument:
 
   #!perl
-  my $compositor = MooseX::ClassCompositor−>new({
+  my $compositor = MooseX::ClassCompositor->new({
     class_basename  => 'MyApp::HTTP::Throwable',
     fixed_roles     => [ '=HTTP::Throwable' ],
     class_metaroles => {
