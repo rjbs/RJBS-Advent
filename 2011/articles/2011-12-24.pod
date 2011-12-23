@@ -1,0 +1,190 @@
+Title: Yes.  I wrote a source filter.
+Topic: Querylet
+
+=head1 Everybody Has Queries
+
+About a lifetime ago, I worked at a place that L<grew
+semicondictors|http://en.wikipedia.org/wiki/Epitaxy>.  We gathered a lot of
+data about every wafer that we produced, and there were lots of variables to
+consider.  What affected what?  What could be changed to make everything even
+better.  Frankly, I I<never had any idea.>
+
+I was just the programmer!  Sometimes, people pretended I was a data analyst,
+but I made it pretty clear that I had no idea how to analyze data for trends or
+correlation or… anything.  We had lots of people on staff who did know that
+stuff.  The problem was that they weren't about to learn
+L<T-SQL|http://en.wikipedia.org/wiki/T-SQL> or Visual Basic just to get
+custom, automated queries dumped into Excel where they could muck around, build
+graphs, or copy the data into L<SPSS|http://en.wikipedia.org/wiki/SPSS>.
+
+These were smart guys.  There were lots of Ph.D.s spread around, and learning a
+little programming was easy.  It would've been a waste of my time and theirs to
+try to teach them I<programming>, though.  What it really meant was that I
+could write a tool for them that didn't need nice buttons or a GUI or even much
+error handling.  I could write them a programming tool, but it couldn't be
+designed the way a programmer would want.
+
+I'm still not sure that it was great idea, but it I<was> a big success within
+the organization, so it couldn't have been all bad.
+
+What I wrote was L<Querylet>, which provided a simplified programming system
+that took a series of commands to query and munge data, then output it for the
+user to read.
+
+A very simple Querylet program might look like this:
+
+  #!code
+  use Querylet;
+
+  database: dbi:SQLite:dbname=wafers.db
+
+  query:
+    SELECT wafer_id, material, diameter, failurecode
+    FROM   grown_wafers
+    WHERE  reactor_id = 105
+      AND  product_type <> 'Calibration'
+
+  add column surface_area:
+    $value = $row->{diameter} * 3.14;
+
+  add column cost:
+    $value = $row->{surface_area} * 100 if $row->{material} eq 'GaAs';
+    $value = $row->{surface_area} * 200 if $row->{material} eq 'InP';
+
+  munge column failurecode:
+    $value = 10 if $value == 3; # 3's have been reclassified
+
+  munge all values:
+    $value = '(null)' unless defined $value;
+
+  output format: html
+
+It should be pretty obvious what this does!  It connects to a database,
+executes a query, adds virtual columns, munges existing columns, and then
+outputs the whole resultset as an HTML table.  We used a subclass of Querylet
+that built in the database connection, so nobody ever had to think about C<dsn>
+strings.
+
+So, what I<did> they have to learn?  Well, they had to learn SQL.  That was
+easy, even when they had to do non-trivial joins.  I wrote a short tutorial on
+how the relational model worked, and MS SQL Server had very good facilities for
+things like subqueries, making lots of SQL easy to write and execute
+efficiently.
+
+They had to learn a couple Perl primitives, like the mathematical operators,
+statement conditions, and C<eq> versus C<==>.  They didn't have to learn
+anything about hashes.  They just had to learn that C<$value> meant a single
+value under consideration and that C<< $row->{field} >> meant one field in a
+row.
+
+Then there was a short list of directives like "add column" or "munge all
+values" to learn.  This took about one page of documentation.
+
+=head1 Output Plugins!
+
+Of course, outputting the data to an HTML table was dumb.  They wanted the data
+to use in complex programs, and let me tell you, they were not going to write
+those in JavaScript running on MSIE 5.  We needed to get this stuff into Excel!
+
+We had this line, above:
+
+  #!perl
+  output format: html
+
+There was also a L<text output plugin|Querylet::Output::Text> that used
+L<Text::Table> to make a nice little dump of data in your console.  I've used
+that one myself, I'm not ashamed to say.  It wasn't very useful for the
+engineers, though.  The useful thing was having a simple way to plug in more
+output formats.  It made it possible to write L<Querylet::Output::Excel::OLE>.
+
+This was a very simple plugin with a very, very important effect.  If you
+loaded it and requested the output format C<excel>, then Querylet would launch
+Excel, make a new workbook, and put the query's results into a worksheet in it.
+You'd just run your program and I<poof!>  Excel would have your data and you
+could get to work.  (It used L<Win32::OLE>, which was probably one of my most
+beloved modules at that job.)
+
+=head2 Input Plugins!
+
+Of course, none of these querylets stayed the same forever – at the very least,
+little parts of the query would have to change.  They needed parameters, and so
+I added them.
+
+You could write the program:
+
+  #!code
+  use Querylet::Input::Term
+  use Querylet;
+
+  database: dbi:SQLite:dbname=wafers.db
+
+  query: SELECT * FROM users WHERE userid = ?
+
+  input: userid
+
+...and when you ran the program, you'd be prompted for the C<userid> before it
+ran.  Each C<input> directive prompted for the next C<?> in the query.  You'd
+have to implement your own input plugin.  The example looks like this:
+
+  #!perl
+  package Querylet::Input::Term;
+  use base qw(Querylet::Input);
+
+  sub default_type { 'term' }
+  sub handler      { \&from_term } 
+
+  sub from_term {
+    my ($query, $parameter) = @_;
+
+    print "$parameter: ";
+    my $input = <STDIN>;
+    chomp $input;
+    $query->{input}->{$parameter} = $input;
+  }
+
+...but it's not what we used.  Half the time, we'd pop up a L<Win32::GUI>
+dialog box to get the input.  The other time... we did I<something else>.
+
+=head1 Something Else
+
+So, we've got all these querylet programs now, and people want to share, or
+have them work on machines that haven't been given a Perl install.  (By the
+time I left, I still hadn't gotten the ActivePerl MSI into our standard
+workstation deployment.)  Some of these querylets, we wanted to be easy for any
+line operator to run.  No problem!
+
+We gave the engineers a shared directory on a sort of sandbox server.  Then we
+told them to use L<Querylet::CGI>.  With that loaded, all the C<input>
+parameters would come from the CGI environment.  If there was no input, the
+query would be turned into an HTML form with one text area per C<input>
+directive.  Posting the form would run the query and return the results as
+HTML or a downloadable F<XLS> file built with another output plugin,
+L<Querylet::Output::Excel::XLS>.
+
+Actually, though, we told them to use L<Querylet::CGI::Auto>.  It was just like
+Querylet::CGI, but if you ran the querylet from your command prompt, it would
+switch back to GUI input and OLE output.
+
+=head1 In retrospect...
+
+In retrospect, I'm not sure what I think about Querylet.  I think it was a
+very, very efficient use of my time, at that job.  Instead of writing dozens or
+hundreds of custom programs, I gave the engineers a programming tool targeting
+their strengths and interests.  Its implementation as a source filter, though,
+was really self-indulgent and gross.  It could probably be entirely
+re-implemented as a text format with hunks that get embedded in blocks and
+string-evaluated.  Still, when I think about doing that, I don't see what there
+is to gain.  It still wouldn't be safe or highly maintainable.  It just might
+have better error messages sometimes.
+
+I guess I I<am> happy with this horrible hack, after all.
+
+=head1 See Also
+
+=for :list
+* L<Querylet>
+* L<Querylet::Output::Excel::OLE>
+* L<Querylet::Output::Excel::XLS>
+* L<Querylet::Output::Text>
+* L<Querylet::CGI>
+* L<Querylet::CGI::Auto>
