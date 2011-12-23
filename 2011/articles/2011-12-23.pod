@@ -14,7 +14,7 @@ the thing.  Is that clear as mud?  Let me elaborate:
 Stevan Little and I wrote L<HTTP::Throwable>, a system for throwing exceptions
 that will be transformed into HTTP responses.  There are a bunch of roles that
 might show up in these:  C<Redirect>, for example, means that the exception is
-going to need a C<Location> header.  C<BoringText> can be brought into let any
+going to need a C<Location> header.  C<BoringText> can be brought in to let any
 of the methods get a very simple, boring C<text_body> method.
 
 If you wanted exceptions to have more data, for communicating detailed error
@@ -24,11 +24,12 @@ tacked on even more data, but only if the error came after authentication.  It
 should be easy to imagine many more such roles.
 
 Now, imagine that you've figured out all the roles you might need for your
-applications full gamut of exception behavior, and that you might need any
-possible intersection of those.  Just I<naming> them all would be a pain.
-Then you'd have to remember those names, or at least the rule you used to name
-them.  Then you'd have to generate all that code and put it into files.  Then
-you'd have to make sure all the classes were loaded.  I<What a drag!>
+application's full gamut of exception behavior, and that you might need any
+possible intersection of those.  Just I<naming> each and every combination
+would be a pain.  Then you'd have to remember those names, or at least the rule
+you used to name them.  Then you'd have to generate all that code and put it
+into files.  Then you'd have to make sure all the classes were loaded.  I<What
+a drag!>
 
 Moose is meant to make a lot of this unneeded, because it gives you tools to
 generate classes easily at runtime without doing a lot of nasty futzing about
@@ -112,6 +113,7 @@ article, click that link and start using strict constructors I<everywhere>.
 You can also use L<parameterized roles|MooseX::Role::Parameterized> with your
 compositor:
 
+  #!perl
   my $class = $compositor->class_for(
     'Redirect',
     [ RPC => JSONRPC => { our_ident => 'myApp', default_port => 8080 } ],
