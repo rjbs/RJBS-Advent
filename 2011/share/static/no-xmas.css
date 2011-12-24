@@ -3,3 +3,6 @@
   font-weight: normal;
 }
 
+.pod a {
+  text-decoration: underline;
+}
