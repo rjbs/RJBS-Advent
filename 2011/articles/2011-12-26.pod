@@ -19,7 +19,7 @@ So, I just wrote my own.  Sure, it was only going to be designed for the needs
 of one man, but at least that man was me!
 
 I'm going to advocate that everyone else go use.  Its implementation was
-inspired by my desire to keep using [Mason](http://masonhq.com/) for templates.
+inspired by my desire to keep using L<Mason|http://masonhq.com/> for templates.
 I really like Mason, at least as a templating system.  I like the way its
 templates can be broken down and can easily use each other.  I like the way
 that many parts of it can be replaced as components.  I haven't seen another
@@ -30,7 +30,7 @@ One of them is that once you remove it from the context of Apache or a similar
 full-featured HTTP daemon, you realize how many features it's missing.  For
 example, there's no way to trivially tell Mason which templates are okay to
 serve to HTTP requests and which are only for internal use.  There's no magic
-filename like `index.html`, unless you want to use a dhandler -- and then you'd
+filename like F<index.html>, unless you want to use a dhandler -- and then you'd
 have two problems.  What I really wanted was a router that would sit between
 Mason and the web request, doing just that one job that Apache used to do.  I
 wanted it to auto-populate a list of templates that were known to be directly
@@ -71,7 +71,7 @@ I ended up with a router like this:
   });
 
 This is boring to type, but that's okay, because I knew I wouldn't have to.  I
-was going to organize Mason's `comp_root` like this:
+was going to organize Mason's F<comp_root> like this:
 
   #!code
   ./comp_root
@@ -82,7 +82,7 @@ was going to organize Mason's `comp_root` like this:
   ./comp_root/view/list/profile
   ./comp_root/widget/userbox
 
-Anything in `endpoints` was automatically routable.  The `INDEX` files would
+Anything in F<endpoints> was automatically routable.  The F<INDEX> files would
 handle requests for their containing directory -- otherwise, directories would
 not be routable.  Templates outside of the endpoints directory would only be
 reachable by explicit routes (like routes to the view templates), or from
@@ -103,7 +103,7 @@ This would set up the routes to the target, and add type constraints if
 requested.  It's a dumb file format, but I can replace it whenever, because
 it's not part of the router.  It's just a file for a tiny helper that converts
 the file's contents into the lower-level work of calling the router's
-`add_route` method.
+F<add_route> method.
 
 This had another nice benefit:  with our Catalyst applications, our web
 designer would often add a page to the site, only to find that it wasn't
@@ -113,8 +113,8 @@ the endpoint directory or edit an extremely simple and straightforward text
 file to make the new page immediately available -- no need to screw around with
 the controller classes.
 
-All told, this took a couple hours of work.  I put [the source for
-Router-Dumb](https://github.com/rjbs/Router-Dumb) on GitHub, and eventually
+All told, this took a couple hours of work.  I put L<the source for
+Router-Dumb|https://github.com/rjbs/Router-Dumb> on GitHub, and eventually
 ended up giving in and putting it on the CPAN.  I wanted to use it in more than
 one place, at which point it was easier to make it yet another CPAN dep than a
 weird thing that had to be installed from git.

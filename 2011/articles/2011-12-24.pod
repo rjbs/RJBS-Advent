@@ -4,7 +4,7 @@ Topic: Querylet
 =head1 Everybody Has Queries
 
 About a lifetime ago, I worked at a place that L<grew
-semicondictors|http://en.wikipedia.org/wiki/Epitaxy>.  We gathered a lot of
+semiconductors|http://en.wikipedia.org/wiki/Epitaxy>.  We gathered a lot of
 data about every wafer that we produced, and there were lots of variables to
 consider.  What affected what?  What could be changed to make everything even
 better.  Frankly, I I<never had any idea.>
