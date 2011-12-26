@@ -1,0 +1,130 @@
+Title: Sometimes, You've Gotta Re-invent That Wheel
+Topic: Router::Dumb
+
+=head1 Everybody Routes
+
+This year, I spent a couple days trying to settle on an HTTP request
+dispatcher.  That is, I wanted to make it easy to say "if somebody requests a
+path that looks like this, dispatch to this template or subroutine."  Everybody
+who writes anything for the web deals with this problem.  It has been solved.
+It's been solved at least a dozen times, actually.
+
+I just couldn't stand any of the solutions.  They were all pretty good-looking
+tools, but they didn't fit exactly into the hole I'd left in my design.  If I
+was going to avoid a resdesign of my system, I was going to need a to build a
+bid adapter around these things.  I was also going to need a big glass of beer
+to cry in, because I was going to loathe the work.
+
+So, I just wrote my own.  Sure, it was only going to be designed for the needs
+of one man, but at least that man was me!
+
+I'm going to advocate that everyone else go use.  Its implementation was
+inspired by my desire to keep using [Mason](http://masonhq.com/) for templates.
+I really like Mason, at least as a templating system.  I like the way its
+templates can be broken down and can easily use each other.  I like the way
+that many parts of it can be replaced as components.  I haven't seen another
+system that I like as much.  None of this is to say, though, that Mason is
+without its own massive glaring problems.
+
+One of them is that once you remove it from the context of Apache or a similar
+full-featured HTTP daemon, you realize how many features it's missing.  For
+example, there's no way to trivially tell Mason which templates are okay to
+serve to HTTP requests and which are only for internal use.  There's no magic
+filename like `index.html`, unless you want to use a dhandler -- and then you'd
+have two problems.  What I really wanted was a router that would sit between
+Mason and the web request, doing just that one job that Apache used to do.  I
+wanted it to auto-populate a list of templates that were known to be directly
+reachable by the user, but I wanted to be able to add routes with placeholders,
+too.  I wanted to be able to simulate Mason's dhandler.
+
+For all this, I only needed a few simple kinds of routes:
+
+  #!code
+  /about/careers        # simple, static path
+  /user/:uid/profile    # a path with named placeholders
+  /posts/:list/query/*  # a path with a slurpy star -- "the rest of the URI"
+
+These are all easy to route, and cover all of Mason's standard routing and
+more.  The placeholders could be typed.  The slurpy star works for dhandlers.
+A few existing routers handled this, but not all with this exact set of
+features, or with the ability to easily add routes after construction, and so
+on.
+
+I ended up with a router like this:
+
+  #!perl
+  my $router = Router::Dumb->new;
+
+  $router->add_route(  Router::Dumb::Route->new({
+    parts  => [ qw(about careers) ],
+    target => 'endpoints/about/careers',
+  });
+
+  $router->add_route(  Router::Dumb::Route->new({
+    parts  => [ qw(user :uid profile) ],
+    target => 'view/user/profile',
+  });
+
+  $router->add_route(  Router::Dumb::Route->new({
+    parts  => [ qw(posts :list query *) ],
+    target => 'view/list/query',
+  });
+
+This is boring to type, but that's okay, because I knew I wouldn't have to.  I
+was going to organize Mason's `comp_root` like this:
+
+  #!code
+  ./comp_root
+  ./comp_root/endpoints/INDEX
+  ./comp_root/endpoints/about/INDEX
+  ./comp_root/endpoints/about/careers
+  ./comp_root/view/user/profile
+  ./comp_root/view/list/profile
+  ./comp_root/widget/userbox
+
+Anything in `endpoints` was automatically routable.  The `INDEX` files would
+handle requests for their containing directory -- otherwise, directories would
+not be routable.  Templates outside of the endpoints directory would only be
+reachable by explicit routes (like routes to the view templates), or from
+within existing templates (like common widgets in the widget directory).
+
+I wrote a helper class that would take a router and a directory and map files
+inside it to routes.  That covered the endpoints directory.  Next up, I needed
+to map to the view templates, so I made another helper that would read routes
+from a simple (read: dumb) text file that looks like this:
+
+  #!code
+  /user/:uid/profile    =>    /view/user/profile
+    uid isa Int
+
+  /posts/:list/query/*  =>    /view/list/query
+
+This would set up the routes to the target, and add type constraints if
+requested.  It's a dumb file format, but I can replace it whenever, because
+it's not part of the router.  It's just a file for a tiny helper that converts
+the file's contents into the lower-level work of calling the router's
+`add_route` method.
+
+This had another nice benefit:  with our Catalyst applications, our web
+designer would often add a page to the site, only to find that it wasn't
+reachable.  We needed an action for it.  We had a few hacks to work around
+this, but they were grotty and unsatisfactory.  Now, he can either put it in
+the endpoint directory or edit an extremely simple and straightforward text
+file to make the new page immediately available -- no need to screw around with
+the controller classes.
+
+All told, this took a couple hours of work.  I put [the source for
+Router-Dumb](https://github.com/rjbs/Router-Dumb) on GitHub, and eventually
+ended up giving in and putting it on the CPAN.  I wanted to use it in more than
+one place, at which point it was easier to make it yet another CPAN dep than a
+weird thing that had to be installed from git.
+
+=head1 See Also
+
+=for :list
+* L<Router::Dumb>
+* L<an earlier version of this article, in my blog|http://rjbs.manxome.org/rubric/entry/1900>
+* L<Path::Router>
+* L<Path::Dispatcher>
+* L<Router::Simple>
+* L<Forward::Routes>

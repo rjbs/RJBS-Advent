@@ -11,7 +11,7 @@
   23 - ✓ MooseX::ClassCompositor
   24 - ✓ Querylet
   25 - ✓ MooseX::Types::Perl
-  26 -   Router::Dumb
+  26 - ✓ Router::Dumb
   27 -   MooseX::SetOnce
   28 -   CheckPrereqsIndexed
 
