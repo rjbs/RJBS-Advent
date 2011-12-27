@@ -12,8 +12,8 @@
   24 - ✓ Querylet
   25 - ✓ MooseX::Types::Perl
   26 - ✓ Router::Dumb
-  27 -   MooseX::SetOnce
-  28 -   CheckPrereqsIndexed
+  27 - ✓ MooseX::SetOnce
+  28 - ✓ CheckPrereqsIndexed
 
 __END__
 * App::Smarkmail ?

@@ -1,0 +1,76 @@
+Title: More Idiocy-Mitigationware from RJBS
+Topic: Dist::Zilla::Plugin::CheckPrereqsIndexed
+
+=head1 Lazy lazy lazy lazy lazy, oops!
+
+Among my many personal failings, there are two that conspire to cause me more
+professional embarrassment than most others:  I am lazy, and I am sloppy.  I
+don't want to do a lot of inspection to ensure that I haven't made a mistake,
+and I do not have a supernatural talent for not making mistakes.  I do my
+crosswords in pen, but by the time I'm done, there's very little room left to
+fill in the right answers, because of all the crossed-out wrong ones.
+
+Some might suggest that the solution to these problems is to grow as a person,
+take more time on my work, check things more carefully, and be more diligent
+in the first place.  Fortunately for me, those people are wrong.  The solution
+is to be I<even lazier>.
+
+I used to forget to add all my prereqs to my dists' F<Makefile.PL>s.  I'd add a
+C<< use Foo::Bar >> somewhere, I wouldn't list it as a prereq, and my tests
+would pass, but somebody else's would not, because they would not have already
+installed Foo::Bar, and wouldn't be told to, because I was lazy and screwed up.
+I tried using L<Test::Without::Module> fruitlessly for a while, but eventually
+I realized it was never going to work:  TWM was for hiding things without which
+the dist should work.  I wanted to solve a different problem.  I wanted to make
+sure that everything I needed was listed somewhere.
+
+Laziness helped.  I did nothing (other than release a few more broken dists)
+and eventually Jérôme Quelin released the excellent
+L<Dist::Zilla::Plugin::AutoPrereqs>, which became entirely indispensable so
+quickly that it was brought into the core Dist-Zilla distribution.
+
+=head1 Lazy lazy lazy lazy lazy again, oops!
+
+Now I had a new problem.
+
+I went and deleted almost all the prereq declarations from my F<dist.ini> files
+and let AutoPrereqs sort it out for me.  It did much better than I did:  it
+picked up modules I forgot, or that I mistakenly thought were core.  It picked
+up the versions that I required, which led me to more often put version
+requirements in the code, where they belonged.  It better sorted my library
+requirements between testing prereqs and runtime prereqs.  It knew to look not
+just at files in F<./lib> but also in F<./t>.
+
+It even knew how to detect most of my internal for-testing-only packages – but
+not all of them.  Sometimes it would still add a prereq on t::lib::SomeTest, or
+some internal package I was setting up strangely.  Worse, sometimes it would
+(quite reasonably) pick up a C<require Foo::Bar> statement from a test, well
+after a line saying to skip the whole test unless Foo was available – quite
+clear to a human, and totally reasonable in practice, but not good enough for a
+stupid static analyzer.
+
+These dists would get released with a bunch of prereqs that didn't make sense
+and couldn't be installed.  C<make test> would still work, but anyone trying to
+install would be stymied by the bogus requirements.  I thought about just
+waiting this one out, to see if Jérôme Quelin would be my savior again, but
+then I realized that Tatsuhiko Miyagawa had already done a bunch of the work:
+I could just check every prereq against his simple L<CPAN Meta
+DB|http://cpanmetadb.plackperl.org/> service.  If the package didn't appear in
+the CPAN index, a release would be a bad idea.
+
+=head1 Hooray for lazy!
+
+Implementing the whole thing took only about L<a hundred lines of
+code|https://github.com/rjbs/dist-zilla-plugin-checkprereqsindexed/blob/master/lib/Dist/Zilla/Plugin/CheckPrereqsIndexed.pm>.
+Adding the plugin to every one of my dists' configurations took about L<one
+line of
+code|https://github.com/rjbs/dist-zilla-pluginbundle-rjbs/commit/6d3f7f3c780d2e86b60d6151fa5b431e8be7baf0>.
+The plugin has already saved me I<dozens> of broken releases, and will surely
+save me more as time goes on.  It's not my favorite thing that I wrote in 2011,
+but it has probably most often saved me from looking like an idiot.
+
+=head1 See Also
+
+=for :list
+* L<Dist::Zilla::Plugin::CheckPrereqsIndexed>
+* L<Test::Without::Module>
