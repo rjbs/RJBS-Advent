@@ -3,6 +3,11 @@
   font-weight: normal;
 }
 
+.calendar td#dec-25.advent {
+  background: #06c;
+  font-weight: normal;
+}
+
 .pod a {
   text-decoration: underline;
 }
