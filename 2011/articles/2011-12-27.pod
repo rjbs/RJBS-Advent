@@ -1,0 +1,100 @@
+Title: Infinite Diversity in Infinite MooseX
+Topic: MooseX::SetOnce
+
+=head1 Mutability, Laziness, and Requiredness
+
+Moose attributes can be mutable ("rw") or immutable ("ro").  (This is a
+simplification, but basically true.)  If an object has a mutable attribute, its
+value can be changed over and over again during the lifetime of the object.  If
+it's immutable, it can never be changed.  It will get a value during
+initialization and that value will never change.  (I am a big fan of
+immutability, and have L<written about how mutability can bite
+you|http://rjbs.manxome.org/rubric/entry/1929> in the past.)
+
+Moose attributes can be required or not.  If they're required, then either they
+must have a value supplied to the constructor or there must be a default for
+the attribute.  (You can mark an attribute both required I<and> give it a
+default, but with a default, the "required" is redundant.)
+
+Moose attributes can be lazy or not.  If they're lazy, and no value was
+provided in the constructor, then the default won't be sorted out until the
+attribute's reader is called – in other words, if at all possible, the default
+I<won't> be sorted out.
+
+These are all useful knobs to be able to twist, but they can't quite all be
+twisted at the same time.  Or, maybe more accurately, there are some
+combinations of these behaviors that you can't get out of the box.
+
+For example, you might want a way to say that an attribute is both required
+I<and> lazy.  That is, you want a lack of any provided value to be fatal, but
+only when someone tries to read the attribute that's lacking its required
+value.  You can't really get this with stock Moose attributes, because C<lazy>
+means that you must provide a default, and if you have a default, C<required>
+is redundant.  When Moose is missing this kind of feature, it's often added in
+a MooseX module, and that's just what happened here.  L<MooseX::LazyRequire>
+provides a trait that lets you mark attributes as having a "lazy requiredness."
+(Okay, so this isn't I<quite> lazy and required, but you get the gist, right?)
+
+=head1 A Can of WORMs
+
+I had been using MooseX::LazyRequire for quite a while when I realized that
+there was another set of knob positions that I wanted but couldn't tune in
+myself:  I wanted attributes that were not required or lazy, but immutable.
+That is, I wanted to be able to set the value myself, once, but never change
+it.
+
+In other words, I didn't want a "ro" or "rw" attribute, but a
+"L<worm|http://en.wikipedia.org/wiki/Write_Once_Read_Many>" attribute.  So, I
+wrote MooseX::WORM, and immediately everyone under the age of 30 said "What the
+heck is WORM?" and I finally succumbed and renamed it to L<MooseX::SetOnce>.
+
+It works like this:
+
+  #!perl
+  {
+    package Person;
+    use Moose;
+    use MooseX::SetOnce;
+
+    has first_kiss => (
+      is  => 'rw',
+      isa => 'Person',
+      traits => [ 'SetOnce' ],
+      predicate => 'ever_been_kissed',
+    );
+  }
+
+  my $alice = Person->new;
+  my $bob   = Person->new;
+
+  if ($alice->ever_been_kissed) {
+    # never reached
+  }
+
+  $alice->first_kiss($bob);
+
+  if ($alice->ever_been_kissed) {
+    # reached!
+  }
+
+The use cases are relatively few and far between, but when you need it, you
+need it, and it's easy to use.
+
+=head1 ...and thanks, Dist::Zilla Moose hackers!
+
+My initial implementation of MooseX::SetOnce was pretty simple, and worked.  As
+Moose changed, though, it broke, and it looked like learning to fix it was
+going to be more work than I was excited to do.  Fortunately for me, I had used
+it in Dist::Zilla, and a few of the core Moose team were using Dist::Zilla and,
+to keep it working, have supplied me with numerous patches to keep it working
+just right over time.  Frankly, I'm not sure how much of the code left in there
+is mine anymore.  C<git blame> suggests about 70%, but I'm guessing most of
+that is Pod, blank lines, and bugs.
+
+Thanks, everybody!
+
+=head1 See Also
+
+=for :list
+* L<MooseX::SetOnce>
+* L<MooseX::LazyRequire>
