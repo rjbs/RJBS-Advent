@@ -158,4 +158,4 @@ in time for use.  It's been a very successful and enjoyable experiment.
 
 =for :list
 * L<MooseX::ClassCompositor>
-* L<MooseX::StrictConstrictor>
+* L<MooseX::StrictConstructor>
